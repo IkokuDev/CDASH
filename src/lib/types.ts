@@ -1,4 +1,5 @@
 
+
 export interface Asset {
     id: string;
     name: string;
@@ -53,4 +54,16 @@ export interface StaffFormData {
   'staff-qualifications-score': string;
   'staff-bio': string;
   'staff-role': string;
+}
+
+export interface Turnover {
+  year: number;
+  amount: number;
+}
+
+export interface OrganizationProfile {
+  name: string;
+  address: string;
+  turnovers: Turnover[];
+  logoUrl?: string;
 }

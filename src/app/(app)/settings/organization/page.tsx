@@ -1,25 +1,64 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building } from 'lucide-react';
+import { Building, Loader2 } from 'lucide-react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import type { OrganizationProfile, Turnover } from '@/lib/types';
 
-const initialTurnovers = [
-  { year: 2023, amount: 1200000000 },
-  { year: 2022, amount: 950000000 },
-  { year: 2021, amount: 800000000 },
-];
+const ORG_PROFILE_DOC_ID = 'main_profile';
 
 export default function OrganizationProfilePage() {
-  const [turnovers, setTurnovers] = useState(initialTurnovers);
+  const [profile, setProfile] = useState<Partial<OrganizationProfile>>({ name: '', address: '', turnovers: [] });
   const [editingYear, setEditingYear] = useState<number | null>(null);
   const [newTurnover, setNewTurnover] = useState({ year: '', amount: '' });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const docRef = doc(db, 'organization', ORG_PROFILE_DOC_ID);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data() as OrganizationProfile;
+           setProfile({
+            ...data,
+            turnovers: data.turnovers ? data.turnovers.sort((a, b) => b.year - a.year) : []
+          });
+        } else {
+          // Initialize with default values if no profile exists
+          setProfile({ name: 'Smart Farmers NG', address: '123 Innovation Drive, Lagos, Nigeria', turnovers: [
+            { year: 2023, amount: 1200000000 },
+            { year: 2022, amount: 950000000 },
+            { year: 2021, amount: 800000000 },
+          ]});
+        }
+      } catch (error) {
+        console.error("Error fetching organization profile: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load organization profile.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [toast]);
+
 
   const handleEdit = (year: number) => {
     setEditingYear(year);
@@ -30,7 +69,10 @@ export default function OrganizationProfilePage() {
   };
   
   const handleUpdate = (year: number, newAmount: number) => {
-    setTurnovers(turnovers.map(t => t.year === year ? { ...t, amount: newAmount } : t));
+    setProfile(prev => ({
+      ...prev,
+      turnovers: (prev.turnovers || []).map(t => t.year === year ? { ...t, amount: newAmount } : t)
+    }));
     setEditingYear(null);
   };
 
@@ -38,15 +80,47 @@ export default function OrganizationProfilePage() {
       const year = parseInt(newTurnover.year, 10);
       const amount = parseFloat(newTurnover.amount);
 
-      if (year && amount && !turnovers.find(t => t.year === year)) {
-          setTurnovers([...turnovers, { year, amount }].sort((a, b) => b.year - a.year));
+      if (year && amount && !(profile.turnovers || []).find(t => t.year === year)) {
+          const updatedTurnovers = [...(profile.turnovers || []), { year, amount }].sort((a, b) => b.year - a.year);
+          setProfile(prev => ({...prev, turnovers: updatedTurnovers}));
           setNewTurnover({ year: '', amount: '' });
       }
+  };
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      const docRef = doc(db, 'organization', ORG_PROFILE_DOC_ID);
+      await setDoc(docRef, profile, { merge: true });
+      toast({
+        title: 'Success',
+        description: 'Organization profile has been saved successfully.',
+      });
+    } catch (error) {
+      console.error("Error saving organization profile: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save organization profile. Please try again.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
   }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-10">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="ml-2">Loading Profile...</p>
+      </div>
+    );
+  }
+
 
   return (
     <Card>
@@ -60,11 +134,11 @@ export default function OrganizationProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="org-name">Organization Name</Label>
-              <Input id="org-name" defaultValue="Smart Farmers NG" />
+              <Input id="org-name" value={profile.name || ''} onChange={(e) => setProfile(p => ({...p, name: e.target.value}))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="org-address">Address</Label>
-              <Textarea id="org-address" defaultValue="123 Innovation Drive, Lagos, Nigeria" />
+              <Textarea id="org-address" value={profile.address || ''} onChange={(e) => setProfile(p => ({...p, address: e.target.value}))} />
             </div>
           </div>
         </div>
@@ -103,7 +177,7 @@ export default function OrganizationProfilePage() {
                           </TableRow>
                       </TableHeader>
                       <TableBody>
-                          {turnovers.map((t) => (
+                          {(profile.turnovers || []).map((t: Turnover) => (
                               <TableRow key={t.year}>
                                   <TableCell>{t.year}</TableCell>
                                   <TableCell>
@@ -131,6 +205,7 @@ export default function OrganizationProfilePage() {
                                 <TableCell>
                                     <Input
                                         placeholder="Year"
+                                        type="number"
                                         value={newTurnover.year}
                                         onChange={(e) => setNewTurnover({ ...newTurnover, year: e.target.value })}
                                         className="max-w-[100px]"
@@ -139,6 +214,7 @@ export default function OrganizationProfilePage() {
                                 <TableCell>
                                      <Input
                                         placeholder="Amount"
+                                        type="number"
                                         value={newTurnover.amount}
                                         onChange={(e) => setNewTurnover({ ...newTurnover, amount: e.target.value })}
                                         className="max-w-xs"
@@ -155,7 +231,10 @@ export default function OrganizationProfilePage() {
         </div>
 
          <div className="flex justify-end">
-              <Button>Save Changes</Button>
+              <Button onClick={handleSaveChanges} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
           </div>
       </CardContent>
     </Card>
