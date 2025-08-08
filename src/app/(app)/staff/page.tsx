@@ -25,11 +25,18 @@ async function getStaff() {
 export default async function StaffPage() {
   const staff = await getStaff();
   
-  const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) {
+  const formatCurrency = (value: number | string) => {
+    let numericValue: number;
+    if (typeof value === 'string') {
+      numericValue = parseFloat(value.replace(/[^0-9.-]+/g,""));
+    } else {
+      numericValue = value;
+    }
+
+    if (isNaN(numericValue)) {
       return 'N/A';
     }
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value) + '/m';
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(numericValue) + '/m';
   }
 
   return (
