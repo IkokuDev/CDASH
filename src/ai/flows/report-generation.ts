@@ -12,6 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ReportGenerationInputSchema = z.object({
+  reportName: z.string().describe('The name of the report.'),
   reportType: z.string().describe('The type of report to generate (e.g., "Comprehensive Asset Analysis", "Expenditure Overview").'),
   dateFrom: z.string().optional().describe('The start date for the report period.'),
   dateTo: z.string().optional().describe('The end date for the report period.'),
@@ -39,6 +40,7 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert ICT analyst tasked with generating a detailed report.
 
   Report Request Details:
+  - Report Name: {{reportName}}
   - Report Type: {{reportType}}
   {{#if dateFrom}}- Start Date: {{dateFrom}}{{/if}}
   {{#if dateTo}}- End Date: {{dateTo}}{{/if}}
@@ -50,7 +52,7 @@ const prompt = ai.definePrompt({
   - Asset Inventory: {{{assetData}}}
   - Staff Directory: {{{staffData}}}
 
-  Please generate a comprehensive report in Markdown format based on the user's request and the provided data. The report should be well-structured, insightful, and directly address the specified requirements. Analyze the data to provide summaries, identify trends, and offer recommendations where applicable.`,
+  Please generate a comprehensive report in Markdown format based on the user's request and the provided data. The report should be well-structured, insightful, and directly address the specified requirements. Analyze the data to provide summaries, identify trends, and offer recommendations where applicable. Start the report with a main heading using the provided report name.`,
 });
 
 const reportGenerationFlow = ai.defineFlow(

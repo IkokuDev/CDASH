@@ -31,6 +31,7 @@ const assetTypes = ['Software', 'Hardware', 'Connectivity', 'Other'];
 
 export default function ReportsPage() {
   const [report, setReport] = useState<string | null>(null);
+  const [reportName, setReportName] = useState<string>('Generated Report');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -41,8 +42,11 @@ export default function ReportsPage() {
 
     const formData = new FormData(e.currentTarget);
     const selectedAssetTypes = assetTypes.filter(type => formData.has(type));
+    const currentReportName = formData.get('reportName') as string;
+    setReportName(currentReportName || 'Generated Report');
 
     const input: ReportGenerationInput = {
+      reportName: currentReportName,
       reportType: formData.get('reportType') as string,
       dateFrom: formData.get('dateFrom') as string,
       dateTo: formData.get('dateTo') as string,
@@ -79,6 +83,11 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="reportName">Report Name</Label>
+              <Input id="reportName" name="reportName" placeholder="e.g., Q3 Asset Performance" required />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="reportType">Report Type</Label>
               <Select name="reportType" required>
@@ -153,7 +162,7 @@ export default function ReportsPage() {
       <div className="lg:col-span-2">
         <Card className="h-full">
           <CardHeader>
-            <CardTitle>Generated Report</CardTitle>
+            <CardTitle>{reportName}</CardTitle>
             <CardDescription>
               The AI-generated report will appear below.
             </CardDescription>
