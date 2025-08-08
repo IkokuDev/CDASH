@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AddAssetModal } from '@/components/AddAssetModal';
+import { AddStaffModal } from '@/components/AddStaffModal';
 import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,6 +42,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   const [user, setUser] = useState<User | null>(null);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -85,6 +87,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const getPageTitle = () => {
     if (pathname.startsWith('/settings/organization')) return 'Organization Profile';
+    if (pathname.startsWith('/settings/roles')) return 'User Groups & Privileges';
     const currentLink = navLinks.find(link => pathname.startsWith(link.href));
     return currentLink ? currentLink.label : 'Dashboard';
   };
@@ -96,7 +99,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const handleButtonClick = () => {
-    if (pathname.startsWith('/reports')) {
+    if (pathname.startsWith('/staff')) {
+      setIsStaffModalOpen(true);
+    } else if (pathname.startsWith('/reports')) {
       console.log('Generate report action triggered');
     } else {
       setIsAssetModalOpen(true);
@@ -177,6 +182,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <AddAssetModal isOpen={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />
+      <AddStaffModal isOpen={isStaffModalOpen} onOpenChange={setIsStaffModalOpen} />
     </div>
   );
 }
