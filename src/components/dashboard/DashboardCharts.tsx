@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Bar, BarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Bar, BarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell as RechartsCell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import type { Asset } from '@/lib/types';
@@ -89,7 +89,7 @@ export default function DashboardCharts({ assets }: { assets: Asset[] }) {
                 strokeWidth={5}
               >
                  {capitalDataByType.map((entry, index) => (
-                  <RechartsPrimitive.Cell key={`cell-${index}`} fill={entry.fill} />
+                  <RechartsCell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
               <ChartLegend
