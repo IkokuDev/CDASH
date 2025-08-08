@@ -1,8 +1,10 @@
 
+import { collection, getDocs } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Percent, ShieldCheck } from 'lucide-react';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
-import { assets } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import type { Asset } from '@/lib/types';
 
 const accessLogs = [
   { user: "John Smith", action: "logged in from", detail: "102.89.33.1", detailColor: "text-yellow-400" },
@@ -10,7 +12,16 @@ const accessLogs = [
   { user: "Super Admin", action: "created a new user profile for", detail: "'David Chen'" , detailColor: "text-green-400"},
 ];
 
-export default function DashboardPage() {
+async function getAssets(): Promise<Asset[]> {
+    const assetsCollection = collection(db, 'assets');
+    const assetsSnapshot = await getDocs(assetsCollection);
+    const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
+    return assetsList;
+}
+
+export default async function DashboardPage() {
+  const assets = await getAssets();
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
   }
@@ -46,7 +57,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-            <DashboardCharts />
+            <DashboardCharts assets={assets} />
         </div>
         <Card className="lg:col-span-1">
           <CardHeader>

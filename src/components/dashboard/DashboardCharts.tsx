@@ -4,7 +4,8 @@
 import { Bar, BarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import { assets } from '@/lib/data';
+import type { Asset } from '@/lib/types';
+
 
 const recurrentData = [
   { month: 'Jan', expenditure: 1.8 },
@@ -14,17 +15,6 @@ const recurrentData = [
   { month: 'May', expenditure: 2.8 },
   { month: 'Jun', expenditure: 4.0 },
 ];
-
-const capitalDataByType = assets.reduce((acc, asset) => {
-    const existingType = acc.find(item => item.name === asset.type);
-    if (existingType) {
-        existingType.value += asset.cost;
-    } else {
-        acc.push({ name: asset.type, value: asset.cost, fill: `var(--color-${asset.type.toLowerCase()})` });
-    }
-    return acc;
-}, [] as { name: string; value: number; fill: string }[]);
-
 
 const chartConfig = {
   expenditure: {
@@ -37,7 +27,18 @@ const chartConfig = {
   other: { label: 'Other', color: 'hsl(var(--chart-4))' },
 };
 
-export default function DashboardCharts() {
+export default function DashboardCharts({ assets }: { assets: Asset[] }) {
+  const capitalDataByType = assets.reduce((acc, asset) => {
+    const typeKey = asset.type.toLowerCase();
+    const existingType = acc.find(item => item.name === asset.type);
+    if (existingType) {
+        existingType.value += asset.cost;
+    } else {
+        acc.push({ name: asset.type, value: asset.cost, fill: `var(--color-${typeKey})` });
+    }
+    return acc;
+  }, [] as { name: string; value: number; fill: string }[]);
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <Card className="xl:col-span-2">
@@ -86,7 +87,11 @@ export default function DashboardCharts() {
                 nameKey="name"
                 innerRadius={60}
                 strokeWidth={5}
-              />
+              >
+                 {capitalDataByType.map((entry, index) => (
+                  <RechartsPrimitive.Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
               <ChartLegend
                 content={<ChartLegendContent nameKey="name" />}
                 className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"

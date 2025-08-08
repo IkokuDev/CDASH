@@ -1,0 +1,54 @@
+
+export interface Asset {
+    id: string;
+    name: string;
+    type: 'Software' | 'Hardware' | 'Connectivity' | 'Other';
+    acquired: string;
+    cost: number;
+    status: 'Active' | 'Maintenance' | 'Decommissioned';
+    summary: string;
+    purpose: string;
+    technicalDetails: string;
+    subCategory: string;
+    aiSummary?: string;
+}
+
+export interface Staff {
+    id: string;
+    name: string;
+    position: string;
+    joined: string;
+    experience: string;
+    salary: string;
+    qualificationsScore: number;
+    bio: string;
+    avatar: string;
+}
+
+export interface AssetFormData {
+    'asset-name': string;
+    'asset-summary': string;
+    'asset-date-acquired': string;
+    'asset-cost': string;
+    'asset-depreciation': string;
+    'asset-purpose': string;
+    'asset-owner': string;
+    'recurrent-exp-prev': string;
+    'recurrent-exp-curr': string;
+    'asset-location': string;
+    'asset-technical-details': string;
+    'asset-type': 'Software' | 'Hardware' | 'Connectivity' | 'Other';
+    'asset-subcategory-type': string;
+    'asset-historical-cost': string;
+    'asset-projected-cost': string;
+}
+
+export interface StaffFormData {
+  'staff-name': string;
+  'staff-position': string;
+  'staff-date-joined': string;
+  'staff-experience': string;
+  'staff-salary': string;
+  'staff-qualifications-score': string;
+  'staff-bio': string;
+}

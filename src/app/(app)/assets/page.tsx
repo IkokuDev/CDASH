@@ -1,4 +1,5 @@
 
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -9,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { assets } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import type { Asset } from '@/lib/types';
 
 const statusVariant = {
   'Active': 'default',
@@ -17,7 +19,17 @@ const statusVariant = {
   'Decommissioned': 'destructive',
 } as const;
 
-export default function AssetsPage() {
+async function getAssets() {
+    const assetsCollection = collection(db, 'assets');
+    const q = query(assetsCollection, orderBy('name'));
+    const assetsSnapshot = await getDocs(q);
+    const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
+    return assetsList;
+}
+
+export default async function AssetsPage() {
+  const assets = await getAssets();
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
   }
@@ -40,7 +52,7 @@ export default function AssetsPage() {
           </TableHeader>
           <TableBody>
             {assets.map((asset) => (
-              <TableRow key={asset.name} className="table-row">
+              <TableRow key={asset.id} className="table-row">
                 <TableCell className="font-medium">{asset.name}</TableCell>
                 <TableCell>{asset.type}</TableCell>
                 <TableCell>{asset.acquired}</TableCell>

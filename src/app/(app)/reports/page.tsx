@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { generateReport, ReportGenerationInput } from '@/ai/flows/report-generation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileText } from 'lucide-react';
-import { assets, staff } from '@/lib/data';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Asset, Staff } from '@/lib/types';
 
 const assetTypes = ['Software', 'Hardware', 'Connectivity', 'Other'];
 
@@ -21,6 +23,35 @@ export default function ReportsPage() {
   const [reportName, setReportName] = useState<string>('Generated Report');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const assetsCollection = collection(db, 'assets');
+        const assetsSnapshot = await getDocs(assetsCollection);
+        const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
+        setAssets(assetsList);
+
+        const staffCollection = collection(db, 'staff');
+        const staffSnapshot = await getDocs(staffCollection);
+        const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
+        setStaff(staffList);
+      } catch (error) {
+        console.error("Error fetching data for reports: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load necessary data for report generation.',
+        });
+      } finally {
+        setIsDataLoading(false);
+      }
+    }
+    fetchData();
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -133,11 +164,16 @@ export default function ReportsPage() {
               />
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button type="submit" disabled={isLoading || isDataLoading} className="w-full">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Generating...
+                </>
+              ) : isDataLoading ? (
+                 <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading Data...
                 </>
               ) : (
                 'Generate Report'

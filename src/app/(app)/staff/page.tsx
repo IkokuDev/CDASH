@@ -9,10 +9,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { staff } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import type { Staff } from '@/lib/types';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 
 
-export default function StaffPage() {
+async function getStaff() {
+    const staffCollection = collection(db, 'staff');
+    const q = query(staffCollection, orderBy('name'));
+    const staffSnapshot = await getDocs(q);
+    const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
+    return staffList;
+}
+
+export default async function StaffPage() {
+  const staff = await getStaff();
+
   return (
     <Card>
       <CardHeader>
@@ -33,7 +45,7 @@ export default function StaffPage() {
           </TableHeader>
           <TableBody>
             {staff.map((member) => (
-              <TableRow key={member.name} className="table-row">
+              <TableRow key={member.id} className="table-row">
                 <TableCell className="font-medium flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person" />
