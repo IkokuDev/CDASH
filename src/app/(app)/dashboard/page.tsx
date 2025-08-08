@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   const recurrentExpenditure = assets.reduce((total, asset) => total + (asset.recurrentExpenditure || 0), 0) * 12;
   const capitalExpenditure = assets.reduce((total, asset) => total + asset.cost, 0);
   const totalStaff = staff.length;
-  const monthlySalaries = staff.reduce((total, member) => total + member.salary, 0);
+  const monthlySalaries = staff.reduce((total, member) => total + (member.salary || 0), 0);
 
   const kpiData = [
     { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure), icon: DollarSign, change: "+5.2%" },
