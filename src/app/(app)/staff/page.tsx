@@ -24,6 +24,10 @@ async function getStaff() {
 
 export default async function StaffPage() {
   const staff = await getStaff();
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value) + '/m';
+  }
 
   return (
     <Card>
@@ -58,7 +62,7 @@ export default async function StaffPage() {
                 <TableCell>{member.role}</TableCell>
                 <TableCell>{member.joined}</TableCell>
                 <TableCell>{member.experience}</TableCell>
-                <TableCell>{member.salary}</TableCell>
+                <TableCell>{formatCurrency(member.salary)}</TableCell>
                 <TableCell>{member.qualificationsScore}</TableCell>
                 <TableCell className="max-w-xs truncate">{member.bio}</TableCell>
               </TableRow>

@@ -21,7 +21,7 @@ export interface Staff {
     position: string;
     joined: string;
     experience: string;
-    salary: string;
+    salary: number;
     qualificationsScore: number;
     bio: string;
     avatar: string;

@@ -59,7 +59,7 @@ export function AddStaffModal({ isOpen, onOpenChange }: AddStaffModalProps) {
       avatar: 'https://placehold.co/40x40', // Placeholder avatar
       joined: form['staff-date-joined'] || '',
       experience: `${form['staff-experience'] || 0} Yrs`,
-      salary: `₦${Number(form['staff-salary'] || 0).toLocaleString()}/m`,
+      salary: Number(form['staff-salary'] || 0),
       qualificationsScore: Number(form['staff-qualifications-score'] || 0),
       bio: form['staff-bio'] || '',
       role: form['staff-role'] || 'Read Only',
