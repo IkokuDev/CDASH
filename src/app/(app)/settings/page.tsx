@@ -18,7 +18,7 @@ export default function SettingsPage() {
         <div>
           <h4 className="text-lg font-medium text-foreground">User Groups & Privileges</h4>
           <p className="text-foreground/70 text-sm mb-3">Define roles and permissions for your team members.</p>
-          <Button variant="outline" size="sm">Manage Roles</Button>
+          <Button variant="secondary" onClick={() => router.push('/settings/roles')}>Manage Roles</Button>
         </div>
 
         <Separator />
