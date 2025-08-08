@@ -2,23 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3,
   Bell,
   Database,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   PlusCircle,
   Settings,
   ShieldCheck,
   Users,
 } from 'lucide-react';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AddAssetModal } from '@/components/AddAssetModal';
+import { app } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,15 +34,45 @@ const navLinks = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [adminName, setAdminName] = useState('Super Admin');
+  const router = useRouter();
+  const { toast } = useToast();
+  const auth = getAuth(app);
+  
+  const [user, setUser] = useState<User | null>(null);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
 
   useEffect(() => {
-    const storedName = localStorage.getItem('ict-central-admin-name');
-    if (storedName) {
-      setAdminName(storedName);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        localStorage.setItem('ict-central-admin-name', currentUser.displayName || 'Super Admin');
+      } else {
+        setUser(null);
+        router.replace('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, router]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('ict-central-admin-name');
+      toast({
+        title: 'Signed Out',
+        description: 'You have been successfully signed out.',
+      });
+      router.replace('/login');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to sign out. Please try again.',
+      });
     }
-  }, []);
+  };
 
   const getPageTitle = () => {
     const currentLink = navLinks.find(link => pathname.startsWith(link.href));
@@ -53,11 +87,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleButtonClick = () => {
     if (pathname.startsWith('/reports')) {
-       // In a real app, you might open a different modal or navigate.
       console.log('Generate report action triggered');
     } else {
       setIsAssetModalOpen(true);
     }
+  }
+  
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   return (
@@ -92,15 +133,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
         <div className="border-t border-border pt-4">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src="https://placehold.co/40x40" alt="Super Admin" />
-              <AvatarFallback>{adminName.substring(0,2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-foreground">{adminName}</p>
-              <p className="text-sm text-foreground/60">super.admin@org.com</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarImage src={user.photoURL || 'https://placehold.co/40x40'} alt={user.displayName || 'Admin'} />
+                <AvatarFallback>{(user.displayName || 'SA').substring(0,2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-foreground">{user.displayName || 'Super Admin'}</p>
+                <p className="text-sm text-foreground/60">{user.email}</p>
+              </div>
             </div>
+             <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
+                <LogOut className="w-5 h-5" />
+             </Button>
           </div>
         </div>
       </aside>
