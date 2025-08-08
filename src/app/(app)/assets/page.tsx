@@ -1,4 +1,5 @@
 
+import Image from 'next/image';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,6 +44,7 @@ export default async function AssetsPage() {
         <Table>
           <TableHeader className="table-header">
             <TableRow>
+              <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Acquired</TableHead>
@@ -53,6 +55,16 @@ export default async function AssetsPage() {
           <TableBody>
             {assets.map((asset) => (
               <TableRow key={asset.id} className="table-row">
+                 <TableCell>
+                  <Image
+                    src={asset.imageUrl || 'https://placehold.co/100x100.png'}
+                    alt={asset.name}
+                    width={40}
+                    height={40}
+                    className="rounded-md object-cover"
+                    data-ai-hint="asset"
+                  />
+                </TableCell>
                 <TableCell className="font-medium">{asset.name}</TableCell>
                 <TableCell>{asset.type}</TableCell>
                 <TableCell>{asset.acquired}</TableCell>

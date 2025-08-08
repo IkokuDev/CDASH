@@ -26,7 +26,8 @@ import { useToast } from '@/hooks/use-toast';
 import { summarizeAsset } from '@/ai/flows/asset-summary';
 import { Loader2 } from 'lucide-react';
 import { addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { Asset, AssetFormData } from '@/lib/types';
 
 interface AddAssetModalProps {
@@ -38,12 +39,18 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<AssetFormData>>({});
+  const [imageFile, setImageFile] = useState<File | null>(null);
   
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
     if (typeof e === 'string') {
        setForm(prev => ({ ...prev, [name!]: e }));
     } else {
-       setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+       if (e.target.type === 'file') {
+         const file = (e.target as HTMLInputElement).files?.[0];
+         setImageFile(file || null);
+       } else {
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+       }
     }
   }
 
@@ -52,6 +59,24 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
     e.preventDefault();
     setIsLoading(true);
 
+    let imageUrl = 'https://placehold.co/100x100.png';
+    if (imageFile) {
+      try {
+        const storageRef = ref(storage, `assets/${Date.now()}_${imageFile.name}`);
+        const uploadResult = await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(uploadResult.ref);
+      } catch(error) {
+        console.error('Error uploading image:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Image Upload Failed',
+          description: 'Could not upload the asset image. Please try again.',
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
     const newAsset: Omit<Asset, 'id'> = {
         name: form['asset-name'] || '',
         summary: form['asset-summary'] || '',
@@ -59,10 +84,11 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
         cost: Number(form['asset-cost'] || 0),
         purpose: form['asset-purpose'] || '',
         technicalDetails: form['asset-technical-details'] || '',
-        type: form['asset-type'] || '',
+        type: form['asset-type'] || 'Other',
         subCategory: form['asset-subcategory-type'] || '',
         status: 'Active', // Default status
         recurrentExpenditure: Number(form['recurrent-exp-curr'] || 0),
+        imageUrl: imageUrl,
     };
 
     try {
@@ -79,7 +105,6 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
       });
       
       const aiSummary = summaryResult.summary;
-      console.log('AI Summary:', aiSummary);
       
       // 2. Add the new asset to Firestore
       const docRef = await addDoc(collection(db, 'assets'), {
@@ -95,6 +120,7 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
       });
       onOpenChange(false);
       setForm({}); // Reset form
+      setImageFile(null);
     } catch (error) {
       console.error('Error adding asset:', error);
       toast({
@@ -120,7 +146,7 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
           <ScrollArea className="h-[60vh] pr-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               <div><Label htmlFor="asset-name">1. Name</Label><Input id="asset-name" name="asset-name" value={form['asset-name'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., Core Banking Application" required /></div>
-              <div><Label htmlFor="asset-icon">2. Icon</Label><Input id="asset-icon" name="asset-icon" type="file" className="mt-1 file:text-sm" /></div>
+              <div><Label htmlFor="asset-icon">2. Icon/Image</Label><Input id="asset-icon" name="asset-icon" type="file" onChange={handleFormChange} className="mt-1 file:text-sm" /></div>
               <div className="md:col-span-2"><Label htmlFor="asset-summary">3. Summary</Label><Textarea id="asset-summary" name="asset-summary" value={form['asset-summary'] || ''} onChange={handleFormChange} className="mt-1" rows={2} placeholder="Brief description of the asset" required /></div>
               <div><Label htmlFor="asset-date-acquired">4. Date Acquired</Label><Input id="asset-date-acquired" name="asset-date-acquired" value={form['asset-date-acquired'] || ''} onChange={handleFormChange} type="date" className="mt-1" required/></div>
               <div><Label htmlFor="asset-cost">5. Cost of Acquisition (NGN)</Label><Input id="asset-cost" name="asset-cost" type="number" value={form['asset-cost'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., 5000000" required/></div>

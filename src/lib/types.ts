@@ -13,6 +13,7 @@ export interface Asset {
     subCategory: string;
     recurrentExpenditure?: number;
     aiSummary?: string;
+    imageUrl?: string;
 }
 
 export interface Staff {
@@ -21,7 +22,7 @@ export interface Staff {
     position: string;
     joined: string;
     experience: string;
-    salary: number;
+    salary: number | string;
     qualificationsScore: number;
     bio: string;
     avatar: string;
@@ -44,6 +45,7 @@ export interface AssetFormData {
     'asset-subcategory-type': string;
     'asset-historical-cost': string;
     'asset-projected-cost': string;
+    'asset-icon': FileList;
 }
 
 export interface StaffFormData {
