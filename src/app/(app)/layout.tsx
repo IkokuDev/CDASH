@@ -47,7 +47,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   const getButtonText = () => {
     if (pathname.startsWith('/staff')) return 'Add New Staff';
+    if (pathname.startsWith('/reports')) return 'Generate New Report';
     return 'Add New Asset';
+  }
+
+  const handleButtonClick = () => {
+    if (pathname.startsWith('/reports')) {
+       // In a real app, you might open a different modal or navigate.
+      console.log('Generate report action triggered');
+    } else {
+      setIsAssetModalOpen(true);
+    }
   }
 
   return (
@@ -101,7 +111,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon"><Bell /></Button>
             <Button variant="ghost" size="icon"><MessageSquare /></Button>
-            <Button onClick={() => setIsAssetModalOpen(true)}>
+            <Button onClick={handleButtonClick}>
               <PlusCircle className="w-5 h-5" />
               <span>{getButtonText()}</span>
             </Button>
