@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,13 +10,44 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Building } from 'lucide-react';
 
-const turnovers = [
-  { year: 2023, amount: '₦1,200,000,000' },
-  { year: 2022, amount: '₦950,000,000' },
-  { year: 2021, amount: '₦800,000,000' },
+const initialTurnovers = [
+  { year: 2023, amount: 1200000000 },
+  { year: 2022, amount: 950000000 },
+  { year: 2021, amount: 800000000 },
 ];
 
 export default function OrganizationProfilePage() {
+  const [turnovers, setTurnovers] = useState(initialTurnovers);
+  const [editingYear, setEditingYear] = useState<number | null>(null);
+  const [newTurnover, setNewTurnover] = useState({ year: '', amount: '' });
+
+  const handleEdit = (year: number) => {
+    setEditingYear(year);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingYear(null);
+  };
+  
+  const handleUpdate = (year: number, newAmount: number) => {
+    setTurnovers(turnovers.map(t => t.year === year ? { ...t, amount: newAmount } : t));
+    setEditingYear(null);
+  };
+
+  const handleAddNew = () => {
+      const year = parseInt(newTurnover.year, 10);
+      const amount = parseFloat(newTurnover.amount);
+
+      if (year && amount && !turnovers.find(t => t.year === year)) {
+          setTurnovers([...turnovers, { year, amount }].sort((a, b) => b.year - a.year));
+          setNewTurnover({ year: '', amount: '' });
+      }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -67,24 +99,57 @@ export default function OrganizationProfilePage() {
                           <TableRow>
                               <TableHead>Year</TableHead>
                               <TableHead>Turnover Amount (NGN)</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
+                              <TableHead className="text-right w-[120px]">Actions</TableHead>
                           </TableRow>
                       </TableHeader>
                       <TableBody>
                           {turnovers.map((t) => (
                               <TableRow key={t.year}>
                                   <TableCell>{t.year}</TableCell>
-                                  <TableCell>{t.amount}</TableCell>
+                                  <TableCell>
+                                    {editingYear === t.year ? (
+                                      <Input 
+                                        type="number" 
+                                        defaultValue={t.amount}
+                                        onBlur={(e) => handleUpdate(t.year, parseFloat(e.target.value))}
+                                        className="max-w-xs"
+                                      />
+                                    ) : (
+                                      formatCurrency(t.amount)
+                                    )}
+                                  </TableCell>
                                   <TableCell className="text-right">
-                                      <Button variant="ghost" size="sm">Edit</Button>
+                                    {editingYear === t.year ? (
+                                       <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                                    ) : (
+                                      <Button variant="ghost" size="sm" onClick={() => handleEdit(t.year)}>Edit</Button>
+                                    )}
                                   </TableCell>
                               </TableRow>
                           ))}
+                           <TableRow>
+                                <TableCell>
+                                    <Input
+                                        placeholder="Year"
+                                        value={newTurnover.year}
+                                        onChange={(e) => setNewTurnover({ ...newTurnover, year: e.target.value })}
+                                        className="max-w-[100px]"
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                     <Input
+                                        placeholder="Amount"
+                                        value={newTurnover.amount}
+                                        onChange={(e) => setNewTurnover({ ...newTurnover, amount: e.target.value })}
+                                        className="max-w-xs"
+                                    />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button variant="outline" size="sm" onClick={handleAddNew}>Add New</Button>
+                                </TableCell>
+                            </TableRow>
                       </TableBody>
                   </Table>
-                  <div className="mt-4 flex justify-end">
-                       <Button variant="outline">Add New Turnover</Button>
-                  </div>
               </CardContent>
           </Card>
         </div>
