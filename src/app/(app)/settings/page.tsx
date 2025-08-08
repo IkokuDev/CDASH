@@ -1,9 +1,14 @@
-import { Badge } from '@/components/ui/badge';
+
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const router = useRouter();
+
   return (
     <Card>
       <CardHeader>
@@ -12,21 +17,18 @@ export default function SettingsPage() {
       <CardContent className="space-y-6">
         <div>
           <h4 className="text-lg font-medium text-foreground">User Groups & Privileges</h4>
-          <p className="text-foreground/70 text-sm mb-3">Define roles for your team.</p>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="default" className="bg-accent text-accent-foreground">Admins</Badge>
-            <Badge variant="secondary">Viewers</Badge>
-            <Badge variant="secondary">Editors</Badge>
-            <Button variant="outline" size="sm">Manage Roles</Button>
-          </div>
+          <p className="text-foreground/70 text-sm mb-3">Define roles and permissions for your team members.</p>
+          <Button variant="outline" size="sm">Manage Roles</Button>
         </div>
 
         <Separator />
 
         <div>
           <h4 className="text-lg font-medium text-foreground">Organization Profile</h4>
-          <p className="text-foreground/70 text-sm mb-3">Update your company details.</p>
-          <Button variant="secondary">Edit Profile</Button>
+          <p className="text-foreground/70 text-sm mb-3">Update your company details, logo, and branding.</p>
+          <Button variant="secondary" onClick={() => router.push('/settings/organization')}>
+            Edit Profile
+          </Button>
         </div>
 
          <Separator />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -71,7 +72,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         title: 'Signed Out',
         description: 'You have been successfully signed out.',
       });
-      router.replace('/login');
+      // The session deletion and redirect is now handled by the onAuthStateChanged listener
     } catch (error) {
       console.error("Error signing out: ", error);
        toast({
@@ -83,6 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const getPageTitle = () => {
+    if (pathname.startsWith('/settings/organization')) return 'Organization Profile';
     const currentLink = navLinks.find(link => pathname.startsWith(link.href));
     return currentLink ? currentLink.label : 'Dashboard';
   };
@@ -121,7 +123,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <nav className="space-y-2">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
+              const isActive = pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}
