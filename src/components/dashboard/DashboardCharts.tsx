@@ -1,8 +1,10 @@
+
 'use client';
 
-import { Bar, BarChart, Donut, Line, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Bar, BarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { assets } from '@/lib/data';
 
 const recurrentData = [
   { month: 'Jan', expenditure: 1.8 },
@@ -13,12 +15,16 @@ const recurrentData = [
   { month: 'Jun', expenditure: 4.0 },
 ];
 
-const capitalData = [
-    { name: 'Hardware', value: 45, fill: 'var(--color-hardware)' },
-    { name: 'Software', value: 35, fill: 'var(--color-software)' },
-    { name: 'Connectivity', value: 15, fill: 'var(--color-connectivity)' },
-    { name: 'Other', value: 5, fill: 'var(--color-other)' },
-];
+const capitalDataByType = assets.reduce((acc, asset) => {
+    const existingType = acc.find(item => item.name === asset.type);
+    if (existingType) {
+        existingType.value += asset.cost;
+    } else {
+        acc.push({ name: asset.type, value: asset.cost, fill: `var(--color-${asset.type.toLowerCase()})` });
+    }
+    return acc;
+}, [] as { name: string; value: number; fill: string }[]);
+
 
 const chartConfig = {
   expenditure: {
@@ -67,10 +73,15 @@ export default function DashboardCharts() {
             <RechartsPieChart>
               <Tooltip
                 cursor={false}
-                content={<ChartTooltipContent hideLabel />}
+                content={<ChartTooltipContent hideLabel formatter={(value, name, props) => (
+                    <div className="flex flex-col">
+                        <span>{props.payload.name}</span>
+                        <span className="font-bold">{new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value as number)}</span>
+                    </div>
+                )} />}
               />
               <Pie
-                data={capitalData}
+                data={capitalDataByType}
                 dataKey="value"
                 nameKey="name"
                 innerRadius={60}

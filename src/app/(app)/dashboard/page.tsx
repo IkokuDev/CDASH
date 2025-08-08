@@ -1,13 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Percent, ShieldCheck } from 'lucide-react';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
-
-const kpiData = [
-  { title: "Recurrent Expenditure (YTD)", value: "₦15.2M", icon: DollarSign, change: "+5.2%" },
-  { title: "Capital Expenditure (YTD)", value: "₦45.8M", icon: DollarSign, change: "+12.1%" },
-  { title: "Expenses/Turnover", value: "12.5%", icon: Percent, change: "-0.5%", changeType: "down" },
-  { title: "ICT Maturity Score", value: "78/100", icon: ShieldCheck, change: "+3 pts" },
-];
+import { assets } from '@/lib/data';
 
 const accessLogs = [
   { user: "John Smith", action: "logged in from", detail: "102.89.33.1", detailColor: "text-yellow-400" },
@@ -16,6 +11,20 @@ const accessLogs = [
 ];
 
 export default function DashboardPage() {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
+  }
+  
+  const recurrentExpenditure = 15200000;
+  const capitalExpenditure = assets.reduce((total, asset) => total + asset.cost, 0);
+
+  const kpiData = [
+    { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure), icon: DollarSign, change: "+5.2%" },
+    { title: "Capital Expenditure (YTD)", value: formatCurrency(capitalExpenditure), icon: DollarSign, change: "+12.1%" },
+    { title: "Expenses/Turnover", value: "12.5%", icon: Percent, change: "-0.5%", changeType: "down" },
+    { title: "ICT Maturity Score", value: "78/100", icon: ShieldCheck, change: "+3 pts" },
+  ];
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

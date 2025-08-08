@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -11,21 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { generateReport, ReportGenerationInput } from '@/ai/flows/report-generation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileText } from 'lucide-react';
-
-const assets = [
-  { name: 'Core Banking App', type: 'Software', acquired: '2022-01-15', cost: '₦25,000,000', status: 'Active' },
-  { name: 'Mainframe Server', type: 'Hardware', acquired: '2021-11-20', cost: '₦12,500,000', status: 'Active' },
-  { name: 'Fiber Optic Link', type: 'Connectivity', acquired: '2023-03-10', cost: '₦8,300,000', status: 'Active' },
-  { name: 'Firewall Appliance', type: 'Hardware', acquired: '2022-08-01', cost: '₦4,000,000', status: 'Maintenance' },
-  { name: 'Backup Generator', type: 'Hardware', acquired: '2020-05-12', cost: '₦7,500,000', status: 'Decommissioned' },
-];
-
-const staff = [
-  { name: 'Jane Doe', position: 'CTO', joined: '2020-05-01', experience: '15 Yrs', salary: '₦2,500,000/m' },
-  { name: 'John Smith', position: 'IT Manager', joined: '2021-02-15', experience: '10 Yrs', salary: '₦1,800,000/m' },
-  { name: 'David Chen', position: 'Network Engineer', joined: '2023-09-01', experience: '5 Yrs', salary: '₦950,000/m' },
-  { name: 'Maria Garcia', position: 'Systems Analyst', joined: '2022-07-19', experience: '8 Yrs', salary: '₦1,200,000/m' },
-];
+import { assets, staff } from '@/lib/data';
 
 const assetTypes = ['Software', 'Hardware', 'Connectivity', 'Other'];
 
