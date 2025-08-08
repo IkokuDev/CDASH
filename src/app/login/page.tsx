@@ -1,13 +1,16 @@
 'use client';
 
 import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
+import { useEffect } from 'react';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 48 48" {...props}>
@@ -22,8 +25,21 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function LoginPage() {
   const auth = getAuth(app);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const provider = new GoogleAuthProvider();
+  const error = searchParams.get('error');
+
+  useEffect(() => {
+    if(error === 'unauthorized') {
+      toast({
+        variant: 'destructive',
+        title: 'Access Denied',
+        description: 'You do not have permission to access this application.',
+      });
+    }
+  }, [error, toast]);
+
 
   const handleGoogleSignIn = async () => {
     try {
@@ -59,6 +75,15 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error === 'unauthorized' && (
+             <Alert variant="destructive" className="mb-4">
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Authorization Error</AlertTitle>
+              <AlertDescription>
+                You are not authorized to view this page. Please contact an administrator if you believe this is a mistake.
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="flex flex-col space-y-4">
             <Button onClick={handleGoogleSignIn} variant="outline" className="w-full">
               <GoogleIcon className="mr-2 h-5 w-5" />

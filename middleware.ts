@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
-import { app } from '@/lib/firebase/admin'; // Assumes admin SDK is initialized here
+import { app } from '@/lib/firebase/admin';
 
 const PROTECTED_ROUTES = ['/dashboard', '/assets', '/staff', '/reports', '/settings'];
 const PUBLIC_ROUTES = ['/login'];
@@ -19,12 +19,16 @@ export async function middleware(request: NextRequest) {
 
   if (sessionCookie) {
     try {
-      // Verify the session cookie with the Firebase Admin SDK.
-      // This will throw an error if the cookie is invalid.
-      await getAuth(app).verifySessionCookie(sessionCookie, true);
+      const decodedClaims = await getAuth(app).verifySessionCookie(sessionCookie, true);
 
-      // If the user is authenticated and tries to access a public route (like login),
-      // redirect them to the dashboard.
+      if (decodedClaims.role !== 'admin') {
+         const url = request.nextUrl.clone();
+         url.pathname = '/login';
+         url.searchParams.set('error', 'unauthorized');
+         url.cookies.delete('session');
+         return NextResponse.redirect(url);
+      }
+      
       if (PUBLIC_ROUTES.includes(pathname)) {
           const url = request.nextUrl.clone();
           url.pathname = '/dashboard';
@@ -32,11 +36,9 @@ export async function middleware(request: NextRequest) {
       }
     } catch (error) {
       console.error('Error verifying session cookie:', error);
-      // If cookie verification fails and it's a protected route, redirect to login.
        if (isProtectedRoute) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
-        // Clear the invalid cookie
         url.cookies.delete('session');
         return NextResponse.redirect(url);
       }
