@@ -11,6 +11,7 @@ export interface Asset {
     purpose: string;
     technicalDetails: string;
     subCategory: string;
+    recurrentExpenditure?: number;
     aiSummary?: string;
 }
 

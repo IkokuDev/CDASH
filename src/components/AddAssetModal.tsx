@@ -62,6 +62,7 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
         type: form['asset-type'] || '',
         subCategory: form['asset-subcategory-type'] || '',
         status: 'Active', // Default status
+        recurrentExpenditure: Number(form['recurrent-exp-curr'] || 0),
     };
 
     try {

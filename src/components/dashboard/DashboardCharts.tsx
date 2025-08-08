@@ -7,19 +7,14 @@ import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } 
 import type { Asset } from '@/lib/types';
 
 
-const recurrentData = [
-  { month: 'Jan', expenditure: 1.8 },
-  { month: 'Feb', expenditure: 2.1 },
-  { month: 'Mar', expenditure: 2.0 },
-  { month: 'Apr', expenditure: 2.5 },
-  { month: 'May', expenditure: 2.8 },
-  { month: 'Jun', expenditure: 4.0 },
-];
-
 const chartConfig = {
-  expenditure: {
-    label: 'Recurrent Expenditure (₦M)',
-    color: 'hsl(var(--primary))',
+  capital: {
+    label: 'Capital Expenditure',
+    color: 'hsl(var(--chart-1))',
+  },
+  recurrent: {
+    label: 'Recurrent Expenditure',
+    color: 'hsl(var(--chart-2))',
   },
   hardware: { label: 'Hardware', color: 'hsl(var(--chart-1))' },
   software: { label: 'Software', color: 'hsl(var(--chart-2))' },
@@ -27,7 +22,8 @@ const chartConfig = {
   other: { label: 'Other', color: 'hsl(var(--chart-4))' },
 };
 
-export default function DashboardCharts({ assets }: { assets: Asset[] }) {
+export default function DashboardCharts({ assets, recurrentExpenditure }: { assets: Asset[], recurrentExpenditure: number }) {
+  
   const capitalDataByType = assets.reduce((acc, asset) => {
     const typeKey = asset.type.toLowerCase();
     const existingType = acc.find(item => item.name === asset.type);
@@ -38,24 +34,33 @@ export default function DashboardCharts({ assets }: { assets: Asset[] }) {
     }
     return acc;
   }, [] as { name: string; value: number; fill: string }[]);
+  
+  const expenditureComparisonData = [
+      { name: 'Capital', value: assets.reduce((acc, asset) => acc + asset.cost, 0), fill: 'var(--color-capital)' },
+      { name: 'Recurrent', value: recurrentExpenditure, fill: 'var(--color-recurrent)' },
+  ]
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <Card className="xl:col-span-2">
         <CardHeader>
-          <CardTitle>Recurrent Expenditure Trend</CardTitle>
+          <CardTitle>Capital vs Recurrent Expenditure</CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <ResponsiveContainer>
-              <BarChart data={recurrentData}>
-                <XAxis dataKey="month" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value}M`} />
+              <BarChart data={expenditureComparisonData} layout="vertical">
+                <XAxis type="number" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${Number(value) / 1000000}M`} />
+                <YAxis type="category" dataKey="name" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip
                   cursor={false}
                   content={<ChartTooltipContent indicator="dot" />}
                 />
-                <Bar dataKey="expenditure" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                 <Bar dataKey="value" layout="vertical" radius={[4, 4, 0, 0]}>
+                    {expenditureComparisonData.map((entry) => (
+                        <RechartsCell key={`cell-${entry.name}`} fill={entry.fill} />
+                    ))}
+                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>

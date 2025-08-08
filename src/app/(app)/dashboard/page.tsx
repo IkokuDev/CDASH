@@ -26,7 +26,7 @@ export default async function DashboardPage() {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
   }
   
-  const recurrentExpenditure = 15200000;
+  const recurrentExpenditure = assets.reduce((total, asset) => total + (asset.recurrentExpenditure || 0), 0) * 12;
   const capitalExpenditure = assets.reduce((total, asset) => total + asset.cost, 0);
 
   const kpiData = [
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-            <DashboardCharts assets={assets} />
+            <DashboardCharts assets={assets} recurrentExpenditure={recurrentExpenditure} />
         </div>
         <Card className="lg:col-span-1">
           <CardHeader>
