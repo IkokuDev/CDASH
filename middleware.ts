@@ -19,21 +19,27 @@ export async function middleware(request: NextRequest) {
 
   if (sessionCookie) {
     try {
-      // We will need to implement session management with cookies
-      // For now, let's assume if a cookie exists, the user is "logged in" for middleware purposes
-      // A proper implementation would verify the cookie with Firebase Admin SDK
+      // Verify the session cookie with the Firebase Admin SDK.
+      // This will throw an error if the cookie is invalid.
+      await getAuth(app).verifySessionCookie(sessionCookie, true);
+
+      // If the user is authenticated and tries to access a public route (like login),
+      // redirect them to the dashboard.
+      if (PUBLIC_ROUTES.includes(pathname)) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/dashboard';
+          return NextResponse.redirect(url);
+      }
     } catch (error) {
+      console.error('Error verifying session cookie:', error);
+      // If cookie verification fails and it's a protected route, redirect to login.
        if (isProtectedRoute) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
+        // Clear the invalid cookie
+        url.cookies.delete('session');
         return NextResponse.redirect(url);
       }
-    }
-    
-    if (PUBLIC_ROUTES.includes(pathname)) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/dashboard';
-        return NextResponse.redirect(url);
     }
   }
 

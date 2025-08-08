@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
-import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -42,12 +42,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        localStorage.setItem('ict-central-admin-name', currentUser.displayName || 'Super Admin');
+        const token = await currentUser.getIdToken();
+        // Send the token to your server to create a session cookie
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
       } else {
         setUser(null);
+        // Clear the session cookie on sign out
+        await fetch('/api/auth/session', { method: 'DELETE' });
         router.replace('/login');
       }
     });
@@ -57,8 +66,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
-      localStorage.removeItem('ict-central-admin-name');
+      await auth.signOut();
       toast({
         title: 'Signed Out',
         description: 'You have been successfully signed out.',
