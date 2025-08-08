@@ -23,6 +23,7 @@ export interface Staff {
     qualificationsScore: number;
     bio: string;
     avatar: string;
+    role: string;
 }
 
 export interface AssetFormData {
@@ -51,4 +52,5 @@ export interface StaffFormData {
   'staff-salary': string;
   'staff-qualifications-score': string;
   'staff-bio': string;
+  'staff-role': string;
 }

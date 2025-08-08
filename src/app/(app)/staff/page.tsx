@@ -36,6 +36,7 @@ export default async function StaffPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Position</TableHead>
+              <TableHead>Role</TableHead>
               <TableHead>Date Joined</TableHead>
               <TableHead>Experience</TableHead>
               <TableHead>Salary</TableHead>
@@ -54,6 +55,7 @@ export default async function StaffPage() {
                   {member.name}
                 </TableCell>
                 <TableCell>{member.position}</TableCell>
+                <TableCell>{member.role}</TableCell>
                 <TableCell>{member.joined}</TableCell>
                 <TableCell>{member.experience}</TableCell>
                 <TableCell>{member.salary}</TableCell>

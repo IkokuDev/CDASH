@@ -20,7 +20,16 @@ import { Loader2 } from 'lucide-react';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Staff, StaffFormData } from '@/lib/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
+// This should eventually come from a central data source or API
+const roles = ['Administrator', 'ICT Manager', 'Finance Officer', 'Read Only'];
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -32,8 +41,12 @@ export function AddStaffModal({ isOpen, onOpenChange }: AddStaffModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<StaffFormData>>({});
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
+    if (typeof e === 'string') {
+       setForm(prev => ({ ...prev, [name!]: e }));
+    } else {
+       setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,6 +62,7 @@ export function AddStaffModal({ isOpen, onOpenChange }: AddStaffModalProps) {
       salary: `₦${Number(form['staff-salary'] || 0).toLocaleString()}/m`,
       qualificationsScore: Number(form['staff-qualifications-score'] || 0),
       bio: form['staff-bio'] || '',
+      role: form['staff-role'] || 'Read Only',
     };
 
     try {
@@ -87,6 +101,19 @@ export function AddStaffModal({ isOpen, onOpenChange }: AddStaffModalProps) {
             <div className="space-y-4">
                 <div><Label htmlFor="staff-name">Full Name</Label><Input id="staff-name" name="staff-name" value={form['staff-name'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., John Smith" required /></div>
                 <div><Label htmlFor="staff-position">Position</Label><Input id="staff-position" name="staff-position" value={form['staff-position'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., IT Manager" required /></div>
+                
+                <div>
+                  <Label htmlFor="staff-role">Role</Label>
+                  <Select name="staff-role" required onValueChange={(value) => handleFormChange(value, 'staff-role')}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select a role..." /></SelectTrigger>
+                    <SelectContent>
+                      {roles.map(role => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div><Label htmlFor="staff-image">Profile Image</Label><Input id="staff-image" name="staff-image" type="file" className="mt-1 file:text-sm" /></div>
                 <div><Label htmlFor="staff-date-joined">Date Joined</Label><Input id="staff-date-joined" name="staff-date-joined" value={form['staff-date-joined'] || ''} onChange={handleFormChange} type="date" className="mt-1" required/></div>
                 <div><Label htmlFor="staff-experience">Experience (Years)</Label><Input id="staff-experience" name="staff-experience" value={form['staff-experience'] || ''} onChange={handleFormChange} type="number" className="mt-1" placeholder="e.g., 10" /></div>
