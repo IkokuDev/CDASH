@@ -26,6 +26,9 @@ export default async function StaffPage() {
   const staff = await getStaff();
   
   const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) {
+      return 'N/A';
+    }
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value) + '/m';
   }
 
