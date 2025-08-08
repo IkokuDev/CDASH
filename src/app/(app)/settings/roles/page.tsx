@@ -10,15 +10,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Staff } from '@/lib/types';
 
-const roles = [
-  { name: 'Administrator', userCount: 2, permissions: ['All Access'] },
-  { name: 'ICT Manager', userCount: 5, permissions: ['View Assets', 'Edit Assets', 'View Staff'] },
-  { name: 'Finance Officer', userCount: 3, permissions: ['View Reports', 'View Assets (Cost)'] },
-  { name: 'Read Only', userCount: 10, permissions: ['View Only'] },
+
+const definedRoles = [
+  { name: 'Administrator', permissions: ['All Access'] },
+  { name: 'ICT Manager', permissions: ['View Assets', 'Edit Assets', 'View Staff'] },
+  { name: 'Finance Officer', permissions: ['View Reports', 'View Assets (Cost)'] },
+  { name: 'Read Only', permissions: ['View Only'] },
 ];
 
-export default function RolesPage() {
+async function getStaff() {
+    const staffCollection = collection(db, 'staff');
+    const staffSnapshot = await getDocs(staffCollection);
+    const staffList = staffSnapshot.docs.map(doc => doc.data() as Staff);
+    return staffList;
+}
+
+
+export default async function RolesPage() {
+  const staff = await getStaff();
+  
+  const rolesWithCounts = definedRoles.map(role => {
+    const userCount = staff.filter(member => member.role === role.name).length;
+    return { ...role, userCount };
+  });
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -39,7 +58,7 @@ export default function RolesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {roles.map((role) => (
+            {rolesWithCounts.map((role) => (
               <TableRow key={role.name}>
                 <TableCell className="font-medium">{role.name}</TableCell>
                 <TableCell>{role.userCount}</TableCell>
@@ -70,3 +89,4 @@ export default function RolesPage() {
     </Card>
   );
 }
+
