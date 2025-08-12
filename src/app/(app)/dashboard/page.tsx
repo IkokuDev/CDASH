@@ -1,7 +1,6 @@
 
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Percent, ShieldCheck, Users } from 'lucide-react';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import { db } from '@/lib/firebase';
 import type { Asset, OrganizationProfile, Staff } from '@/lib/types';
@@ -38,10 +37,13 @@ export default async function DashboardPage() {
   const capitalExpenditure = assets.reduce((total, asset) => total + asset.cost, 0);
   const totalStaff = staff.length;
   const monthlySalaries = staff.reduce((total, member) => {
-    const salary = typeof member.salary === 'string' 
-      ? parseFloat(member.salary.replace(/[^0-9.-]+/g,"")) 
-      : member.salary;
-    return total + (salary || 0);
+    let salary = 0;
+    if (typeof member.salary === 'string') {
+      salary = parseFloat(member.salary.replace(/[^0-9.-]+/g,""));
+    } else if (typeof member.salary === 'number') {
+      salary = member.salary;
+    }
+    return total + (isNaN(salary) ? 0 : salary);
   }, 0);
 
   const totalIctExpenses = capitalExpenditure + recurrentExpenditure;
@@ -53,12 +55,12 @@ export default async function DashboardPage() {
 
 
   const kpiData = [
-    { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure), icon: DollarSign, change: "+5.2%" },
-    { title: "Capital Expenditure (YTD)", value: formatCurrency(capitalExpenditure), icon: DollarSign, change: "+12.1%" },
-    { title: "Number of Staff", value: totalStaff, icon: Users, change: "+2 this month" },
-    { title: "Monthly Salaries", value: formatCurrency(monthlySalaries, { notation: 'compact' }), icon: DollarSign, change: "+3%" },
-    { title: "Expenses/Turnover", value: `${expensesToTurnoverRatio.toFixed(1)}%`, icon: Percent, change: "-0.5%", changeType: "down" },
-    { title: "ICT Maturity Score", value: `${averageIctMaturity.toFixed(0)}/100`, icon: ShieldCheck, change: "+3 pts" },
+    { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure), change: "+5.2%" },
+    { title: "Capital Expenditure (YTD)", value: formatCurrency(capitalExpenditure), change: "+12.1%" },
+    { title: "Number of Staff", value: totalStaff, change: "+2 this month" },
+    { title: "Monthly Salaries", value: formatCurrency(monthlySalaries, { notation: 'compact' }), change: "+3%" },
+    { title: "Expenses/Turnover", value: `${expensesToTurnoverRatio.toFixed(1)}%`, change: "-0.5%", changeType: "down" },
+    { title: "ICT Maturity Score", value: `${averageIctMaturity.toFixed(0)}/100`, change: "+3 pts" },
   ];
   
   return (
@@ -68,7 +70,6 @@ export default async function DashboardPage() {
           <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-foreground/80">{item.title}</CardTitle>
-              <item.icon className="h-4 w-4 text-foreground/70" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{item.value}</div>
