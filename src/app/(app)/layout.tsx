@@ -37,7 +37,7 @@ const navLinks = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-function SidebarContent({ user, onSignOut }: { user: User; onSignOut: () => void }) {
+function SidebarContent({ user, onSignOut, onLinkClick }: { user: User; onSignOut: () => void; onLinkClick?: () => void; }) {
   const pathname = usePathname();
   return (
     <div className="flex flex-col justify-between bg-card p-4 h-full">
@@ -57,6 +57,7 @@ function SidebarContent({ user, onSignOut }: { user: User; onSignOut: () => void
                   <TooltipTrigger asChild>
                     <Link
                       href={link.href}
+                      onClick={onLinkClick}
                       className={cn(
                         'flex items-center px-4 py-2.5 rounded-lg transition-colors',
                         isActive
@@ -107,6 +108,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -187,9 +189,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="overflow-y-auto">
-        <header className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+        <header className="p-4 md:p-6 border-b border-border flex justify-between items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
           <div className="flex items-center gap-4">
-             <Sheet>
+             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" className="md:hidden">
                     <Menu className="h-5 w-5" />
@@ -197,7 +199,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 border-r-0 w-[280px]">
-                  <SidebarContent user={user} onSignOut={handleSignOut} />
+                  <SidebarContent user={user} onSignOut={handleSignOut} onLinkClick={() => setIsSheetOpen(false)} />
                 </SheetContent>
               </Sheet>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">{getPageTitle()}</h2>
@@ -211,7 +213,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </header>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6">{children}</div>
       </main>
 
       <AddAssetModal isOpen={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />
