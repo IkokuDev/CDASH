@@ -72,7 +72,7 @@ export default async function DashboardPage() {
               <CardTitle className="text-sm font-medium text-foreground/80">{item.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{item.value}</div>
+              <div className="text-2xl font-bold">{item.value}</div>
               <p className={`text-xs ${item.changeType === 'down' ? 'text-red-500' : 'text-green-500'}`}>
                 {item.change} vs last period
               </p>
