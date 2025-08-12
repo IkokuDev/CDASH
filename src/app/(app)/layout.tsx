@@ -10,6 +10,7 @@ import {
   Database,
   LayoutDashboard,
   LogOut,
+  Menu,
   MessageSquare,
   PlusCircle,
   Settings,
@@ -25,6 +26,7 @@ import { AddAssetModal } from '@/components/AddAssetModal';
 import { AddStaffModal } from '@/components/AddStaffModal';
 import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,6 +35,59 @@ const navLinks = [
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
+
+function SidebarContent({ user, onSignOut }: { user: User; onSignOut: () => void }) {
+  const pathname = usePathname();
+  return (
+    <div className="flex flex-col justify-between bg-card p-4 h-full">
+      <div>
+        <div className="flex items-center gap-3 mb-8 px-2">
+          <div className="bg-primary p-2 rounded-lg">
+            <ShieldCheck className="text-primary-foreground" />
+          </div>
+          <h1 className="text-xl font-bold text-foreground">CDASH</h1>
+        </div>
+        <nav className="space-y-2">
+          {navLinks.map((link) => {
+            const isActive = pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'flex items-center px-4 py-2.5 rounded-lg transition-colors',
+                  isActive
+                    ? 'bg-primary/90 text-primary-foreground'
+                    : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                )}
+              >
+                <link.icon className="w-5 h-5 mr-3" />
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+      <div className="border-t border-border pt-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar>
+              <AvatarImage src={user.photoURL || 'https://placehold.co/40x40'} alt={user.displayName || 'Admin'} />
+              <AvatarFallback>{(user.displayName || 'SA').substring(0,2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-foreground">{user.displayName || 'Super Admin'}</p>
+              <p className="text-sm text-foreground/60">{user.email}</p>
+            </div>
+          </div>
+           <Button variant="ghost" size="icon" onClick={onSignOut} aria-label="Sign out">
+              <LogOut className="w-5 h-5" />
+           </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -118,63 +173,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="grid md:grid-cols-[280px_1fr] h-screen">
-      <aside className="hidden md:flex flex-col justify-between bg-card p-4 border-r border-border">
-        <div>
-          <div className="flex items-center gap-3 mb-8 px-2">
-            <div className="bg-primary p-2 rounded-lg">
-              <ShieldCheck className="text-primary-foreground" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground">CDASH</h1>
-          </div>
-          <nav className="space-y-2">
-            {navLinks.map((link) => {
-              const isActive = pathname.startsWith(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'flex items-center px-4 py-2.5 rounded-lg transition-colors',
-                    isActive
-                      ? 'bg-primary/90 text-primary-foreground'
-                      : 'text-foreground/70 hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  <link.icon className="w-5 h-5 mr-3" />
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="border-t border-border pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarImage src={user.photoURL || 'https://placehold.co/40x40'} alt={user.displayName || 'Admin'} />
-                <AvatarFallback>{(user.displayName || 'SA').substring(0,2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold text-foreground">{user.displayName || 'Super Admin'}</p>
-                <p className="text-sm text-foreground/60">{user.email}</p>
-              </div>
-            </div>
-             <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
-                <LogOut className="w-5 h-5" />
-             </Button>
-          </div>
-        </div>
+      <aside className="hidden md:block border-r border-border">
+        <SidebarContent user={user} onSignOut={handleSignOut} />
       </aside>
 
       <main className="overflow-y-auto">
         <header className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <h2 className="text-2xl font-bold text-foreground">{getPageTitle()}</h2>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon"><Bell /></Button>
-            <Button variant="ghost" size="icon"><MessageSquare /></Button>
+             <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 border-r-0 w-[280px]">
+                  <SidebarContent user={user} onSignOut={handleSignOut} />
+                </SheetContent>
+              </Sheet>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">{getPageTitle()}</h2>
+          </div>
+          <div className="flex items-center gap-2 md:gap-4">
+            <Button variant="ghost" size="icon" className="hidden md:inline-flex"><Bell /></Button>
+            <Button variant="ghost" size="icon" className="hidden md:inline-flex"><MessageSquare /></Button>
             <Button onClick={handleButtonClick}>
-              <PlusCircle className="w-5 h-5" />
-              <span>{getButtonText()}</span>
+              <PlusCircle className="w-5 h-5 md:mr-2" />
+              <span className="hidden md:inline">{getButtonText()}</span>
             </Button>
           </div>
         </header>
