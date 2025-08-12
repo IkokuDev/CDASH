@@ -43,9 +43,16 @@ function SidebarContent({ user, onSignOut, onLinkClick }: { user: User; onSignOu
     <div className="flex flex-col justify-between bg-card p-4 h-full">
       <div>
         <div className="flex items-center gap-3 mb-8 px-2">
-          <div className="bg-primary p-2 rounded-lg">
-            <ShieldCheck className="text-primary-foreground" />
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="bg-primary p-2 rounded-lg">
+                  <ShieldCheck className="text-primary-foreground" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center">ICT Central</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <h1 className="text-xl font-bold text-foreground">CDASH</h1>
         </div>
         <nav className="space-y-2">
@@ -109,6 +116,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -166,12 +175,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleButtonClick = () => {
     if (pathname.startsWith('/staff')) {
+      setIsAddingStaff(true);
       setIsStaffModalOpen(true);
     } else if (pathname.startsWith('/reports')) {
       console.log('Generate report action triggered');
     } else {
       setIsAssetModalOpen(true);
     }
+  }
+
+  const onAddStaffModalOpenChange = (isOpen: boolean) => {
+      if (!isOpen) {
+          setIsAddingStaff(false);
+      }
+      setIsStaffModalOpen(isOpen);
   }
   
   if (!user) {
@@ -217,7 +234,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <AddAssetModal isOpen={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />
-      <AddStaffModal isOpen={isStaffModalOpen} onOpenChange={setIsStaffModalOpen} />
+      { isAddingStaff && <AddStaffModal isOpen={isStaffModalOpen} onOpenChange={onAddStaffModalOpenChange} /> }
     </div>
   );
 }
+

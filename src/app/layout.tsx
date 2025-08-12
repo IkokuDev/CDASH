@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'ICT Central',
-  description: 'CDASH - ICT Repository Prototype',
+  title: 'CDASH',
+  description: 'CDASH - ICT Repository System',
 };
 
 export default function RootLayout({
