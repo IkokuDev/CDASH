@@ -77,7 +77,7 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
       }
     }
 
-    const newAsset: Omit<Asset, 'id'> = {
+    const newAssetData = {
         name: form['asset-name'] || '',
         summary: form['asset-summary'] || '',
         acquired: form['asset-date-acquired'] || '',
@@ -94,23 +94,25 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
     try {
       // 1. Summarize asset details with AI
       const summaryResult = await summarizeAsset({
-        name: newAsset.name,
-        summary: newAsset.summary,
-        dateAcquired: newAsset.acquired,
-        costOfAcquisition: newAsset.cost,
-        businessPurpose: newAsset.purpose,
-        technicalDetails: newAsset.technicalDetails,
-        type: newAsset.type,
-        subCategoryType: newAsset.subCategory,
+        name: newAssetData.name,
+        summary: newAssetData.summary,
+        dateAcquired: newAssetData.acquired,
+        costOfAcquisition: newAssetData.cost,
+        businessPurpose: newAssetData.purpose,
+        technicalDetails: newAssetData.technicalDetails,
+        type: newAssetData.type,
+        subCategoryType: newAssetData.subCategory,
       });
       
       const aiSummary = summaryResult.summary;
       
+      const assetToSave: Omit<Asset, 'id'> = {
+          ...newAssetData,
+          aiSummary: aiSummary,
+      };
+
       // 2. Add the new asset to Firestore
-      const docRef = await addDoc(collection(db, 'assets'), {
-        ...newAsset,
-        aiSummary: aiSummary, // Add AI summary to the document
-      });
+      const docRef = await addDoc(collection(db, 'assets'), assetToSave);
 
       console.log('Document written with ID: ', docRef.id);
 
