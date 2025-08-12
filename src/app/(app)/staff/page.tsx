@@ -55,7 +55,7 @@ export default async function StaffPage() {
               <TableHead>Experience</TableHead>
               <TableHead>Salary</TableHead>
               <TableHead>Qual. Score</TableHead>
-              <TableHead>Bio</TableHead>
+              <TableHead className="w-[30%]">Bio</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -74,7 +74,7 @@ export default async function StaffPage() {
                 <TableCell>{member.experience}</TableCell>
                 <TableCell>{formatCurrency(member.salary)}</TableCell>
                 <TableCell>{member.qualificationsScore}</TableCell>
-                <TableCell className="max-w-xs truncate">{member.bio}</TableCell>
+                <TableCell className="whitespace-normal">{member.bio}</TableCell>
               </TableRow>
             ))}
           </TableBody>

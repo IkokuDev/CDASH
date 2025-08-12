@@ -27,6 +27,7 @@ import { AddStaffModal } from '@/components/AddStaffModal';
 import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -48,24 +49,32 @@ function SidebarContent({ user, onSignOut }: { user: User; onSignOut: () => void
           <h1 className="text-xl font-bold text-foreground">CDASH</h1>
         </div>
         <nav className="space-y-2">
-          {navLinks.map((link) => {
-            const isActive = pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'flex items-center px-4 py-2.5 rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-primary/90 text-primary-foreground'
-                    : 'text-foreground/70 hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <link.icon className="w-5 h-5 mr-3" />
-                {link.label}
-              </Link>
-            );
-          })}
+          <TooltipProvider>
+            {navLinks.map((link) => {
+              const isActive = pathname.startsWith(link.href);
+              return (
+                <Tooltip key={link.href} delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        'flex items-center px-4 py-2.5 rounded-lg transition-colors',
+                        isActive
+                          ? 'bg-primary/90 text-primary-foreground'
+                          : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <link.icon className="w-5 h-5 mr-3" />
+                      {link.label}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" align="center">
+                    <p>{link.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </TooltipProvider>
         </nav>
       </div>
       <div className="border-t border-border pt-4">
@@ -172,7 +181,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="grid md:grid-cols-[280px_1fr] h-screen">
+    <div className="grid md:grid-cols-[280px_1fr] h-screen bg-background">
       <aside className="hidden md:block border-r border-border">
         <SidebarContent user={user} onSignOut={handleSignOut} />
       </aside>

@@ -63,11 +63,11 @@ export default async function DashboardPage() {
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
         {kpiData.map((item, index) => (
           <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-foreground/70">{item.title}</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground/80">{item.title}</CardTitle>
               <item.icon className="h-4 w-4 text-foreground/70" />
             </CardHeader>
             <CardContent>
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
             <div className="space-y-4">
               {accessLogs.map((log, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <div className="text-sm text-foreground/70">
+                  <div className="text-sm text-foreground/80">
                     <span className="font-semibold text-foreground">{log.user}</span> {log.action} <span className={log.detailColor}>{log.detail}</span>.
                   </div>
                 </div>

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -44,17 +45,17 @@ body {
   }
   .dark {
     --background: 187 8% 16%;
-    --foreground: 210 14% 86%;
+    --foreground: 210 14% 96%; /* Increased lightness */
     --card: 215 28% 17%;
-    --card-foreground: 210 14% 86%;
+    --card-foreground: 210 14% 96%; /* Increased lightness */
     --popover: 215 28% 17%;
-    --popover-foreground: 210 14% 86%;
+    --popover-foreground: 210 14% 96%; /* Increased lightness */
     --primary: 183 31% 58%;
     --primary-foreground: 222 47% 11%;
     --secondary: 215 14% 34%;
-    --secondary-foreground: 210 14% 90%;
+    --secondary-foreground: 210 14% 92%; /* Increased lightness */
     --muted: 215 28% 17%;
-    --muted-foreground: 215 14% 55%;
+    --muted-foreground: 215 14% 65%; /* Increased lightness */
     --accent: 209 100% 70%;
     --accent-foreground: 222 47% 11%;
     --destructive: 0 62.8% 30.6%;
