@@ -34,9 +34,10 @@ const roles = ['Administrator', 'ICT Manager', 'Finance Officer', 'Read Only'];
 interface AddStaffModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onStaffAdded: () => void;
 }
 
-export function AddStaffModal({ isOpen, onOpenChange }: AddStaffModalProps) {
+export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<StaffFormData>>({});
@@ -69,6 +70,8 @@ export function AddStaffModal({ isOpen, onOpenChange }: AddStaffModalProps) {
       const docRef = await addDoc(collection(db, 'staff'), newStaffMember);
       console.log('Document written with ID: ', docRef.id);
       
+      onStaffAdded();
+
       toast({
         title: 'Staff Member Added',
         description: 'The new staff member has been successfully added.',

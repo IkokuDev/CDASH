@@ -33,9 +33,10 @@ import type { Asset, AssetFormData } from '@/lib/types';
 interface AddAssetModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onAssetAdded: () => void;
 }
 
-export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
+export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<AssetFormData>>({});
@@ -113,8 +114,9 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
 
       // 2. Add the new asset to Firestore
       const docRef = await addDoc(collection(db, 'assets'), assetToSave);
-
       console.log('Document written with ID: ', docRef.id);
+      
+      onAssetAdded();
 
       toast({
         title: 'Asset Added',
@@ -213,5 +215,3 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
     </Dialog>
   );
 }
-
-    

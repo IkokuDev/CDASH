@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -36,6 +36,11 @@ const navLinks = [
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
+
+const DataContext = createContext<{ refreshData: () => void }>({ refreshData: () => {} });
+
+export const useData = () => useContext(DataContext);
+
 
 function SidebarContent({ user, onSignOut, onLinkClick }: { user: User; onSignOut: () => void; onLinkClick?: () => void; }) {
   const pathname = usePathname();
@@ -116,8 +121,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isAddingStaff, setIsAddingStaff] = useState(false);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
+  const refreshData = useCallback(() => {
+    setRefreshCounter(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -149,7 +157,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         title: 'Signed Out',
         description: 'You have been successfully signed out.',
       });
-      // The session deletion and redirect is now handled by the onAuthStateChanged listener
     } catch (error) {
       console.error("Error signing out: ", error);
        toast({
@@ -175,20 +182,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleButtonClick = () => {
     if (pathname.startsWith('/staff')) {
-      setIsAddingStaff(true);
       setIsStaffModalOpen(true);
     } else if (pathname.startsWith('/reports')) {
       console.log('Generate report action triggered');
     } else {
       setIsAssetModalOpen(true);
     }
-  }
-
-  const onAddStaffModalOpenChange = (isOpen: boolean) => {
-      if (!isOpen) {
-          setIsAddingStaff(false);
-      }
-      setIsStaffModalOpen(isOpen);
   }
   
   if (!user) {
@@ -200,42 +199,45 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="grid md:grid-cols-[280px_1fr] h-screen bg-background">
-      <aside className="hidden md:block border-r border-border">
-        <SidebarContent user={user} onSignOut={handleSignOut} />
-      </aside>
+    <DataContext.Provider value={{ refreshData }}>
+      <div className="grid md:grid-cols-[280px_1fr] h-screen bg-background">
+        <aside className="hidden md:block border-r border-border">
+          <SidebarContent user={user} onSignOut={handleSignOut} />
+        </aside>
 
-      <main className="overflow-y-auto">
-        <header className="p-4 md:p-6 border-b border-border flex justify-between items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <div className="flex items-center gap-4">
-             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="md:hidden">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 border-r-0 w-[280px]">
-                  <SidebarContent user={user} onSignOut={handleSignOut} onLinkClick={() => setIsSheetOpen(false)} />
-                </SheetContent>
-              </Sheet>
-            <h2 className="text-xl md:text-2xl font-bold text-foreground">{getPageTitle()}</h2>
+        <main className="overflow-y-auto">
+          <header className="p-4 md:p-6 border-b border-border flex justify-between items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <div className="flex items-center gap-4">
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="md:hidden">
+                      <Menu className="h-5 w-5" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 border-r-0 w-[280px]">
+                    <SidebarContent user={user} onSignOut={handleSignOut} onLinkClick={() => setIsSheetOpen(false)} />
+                  </SheetContent>
+                </Sheet>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">{getPageTitle()}</h2>
+            </div>
+            <div className="flex items-center gap-2 md:gap-4">
+              <Button variant="ghost" size="icon" className="hidden md:inline-flex"><Bell /></Button>
+              <Button variant="ghost" size="icon" className="hidden md:inline-flex"><MessageSquare /></Button>
+              <Button onClick={handleButtonClick}>
+                <PlusCircle className="w-5 h-5 md:mr-2" />
+                <span className="hidden md:inline">{getButtonText()}</span>
+              </Button>
+            </div>
+          </header>
+          <div className="p-4 md:p-6" key={refreshCounter}>
+            {children}
           </div>
-          <div className="flex items-center gap-2 md:gap-4">
-            <Button variant="ghost" size="icon" className="hidden md:inline-flex"><Bell /></Button>
-            <Button variant="ghost" size="icon" className="hidden md:inline-flex"><MessageSquare /></Button>
-            <Button onClick={handleButtonClick}>
-              <PlusCircle className="w-5 h-5 md:mr-2" />
-              <span className="hidden md:inline">{getButtonText()}</span>
-            </Button>
-          </div>
-        </header>
-        <div className="p-4 md:p-6">{children}</div>
-      </main>
+        </main>
 
-      <AddAssetModal isOpen={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />
-      { isAddingStaff && <AddStaffModal isOpen={isStaffModalOpen} onOpenChange={onAddStaffModalOpenChange} /> }
-    </div>
+        <AddAssetModal isOpen={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} onAssetAdded={refreshData} />
+        <AddStaffModal isOpen={isStaffModalOpen} onOpenChange={setIsStaffModalOpen} onStaffAdded={refreshData} />
+      </div>
+    </DataContext.Provider>
   );
 }
-

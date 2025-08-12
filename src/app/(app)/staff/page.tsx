@@ -52,14 +52,14 @@ export default function StaffPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const { toast } = useToast();
 
+  const fetchStaff = async () => {
+    const staffList = await getStaff();
+    setStaff(staffList);
+  };
+  
   useEffect(() => {
     fetchStaff();
   }, []);
-  
-  const fetchStaff = async () => {
-      const staffList = await getStaff();
-      setStaff(staffList);
-  }
 
   const handleEditOpen = (member: Staff) => {
     setSelectedStaff(member);
