@@ -39,6 +39,7 @@ export default async function DashboardPage() {
   const monthlySalaries = staff.reduce((total, member) => {
     let salary = 0;
     if (typeof member.salary === 'string') {
+      // Handle existing string salaries like "₦400,000/m"
       salary = parseFloat(member.salary.replace(/[^0-9.-]+/g,""));
     } else if (typeof member.salary === 'number') {
       salary = member.salary;
@@ -55,8 +56,8 @@ export default async function DashboardPage() {
 
 
   const kpiData = [
-    { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure), change: "+5.2%" },
-    { title: "Capital Expenditure (YTD)", value: formatCurrency(capitalExpenditure), change: "+12.1%" },
+    { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure, { notation: 'compact' }), change: "+5.2%" },
+    { title: "Capital Expenditure (YTD)", value: formatCurrency(capitalExpenditure, { notation: 'compact' }), change: "+12.1%" },
     { title: "Number of Staff", value: totalStaff, change: "+2 this month" },
     { title: "Monthly Salaries", value: formatCurrency(monthlySalaries, { notation: 'compact' }), change: "+3%" },
     { title: "Expenses/Turnover", value: `${expensesToTurnoverRatio.toFixed(1)}%`, change: "-0.5%", changeType: "down" },
