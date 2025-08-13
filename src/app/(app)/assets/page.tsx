@@ -20,6 +20,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
 import { db } from '@/lib/firebase';
@@ -100,14 +105,29 @@ export default function AssetsPage() {
             {assets.map((asset) => (
               <TableRow key={asset.id} className="table-row">
                  <TableCell>
-                  <Image
-                    src={asset.imageUrl || 'https://placehold.co/100x100.png'}
-                    alt={asset.name}
-                    width={40}
-                    height={40}
-                    className="rounded-md object-cover"
-                    data-ai-hint="asset"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button>
+                        <Image
+                          src={asset.imageUrl || 'https://placehold.co/100x100.png'}
+                          alt={asset.name}
+                          width={40}
+                          height={40}
+                          className="rounded-md object-cover"
+                          data-ai-hint="asset"
+                        />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                       <Image
+                          src={asset.imageUrl || 'https://placehold.co/400x400.png'}
+                          alt={asset.name}
+                          width={200}
+                          height={200}
+                          className="rounded-md object-cover"
+                        />
+                    </PopoverContent>
+                  </Popover>
                 </TableCell>
                 <TableCell className="font-medium">{asset.name}</TableCell>
                 <TableCell>{asset.type}</TableCell>
