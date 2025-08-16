@@ -1,3 +1,4 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { app } from '@/lib/firebase/admin';
@@ -25,8 +26,10 @@ export async function middleware(request: NextRequest) {
          const url = request.nextUrl.clone();
          url.pathname = '/login';
          url.searchParams.set('error', 'unauthorized');
-         url.cookies.delete('session');
-         return NextResponse.redirect(url);
+         // Important: Clear the invalid session cookie
+         const response = NextResponse.redirect(url);
+         response.cookies.delete('session');
+         return response;
       }
       
       if (PUBLIC_ROUTES.includes(pathname)) {
@@ -39,8 +42,10 @@ export async function middleware(request: NextRequest) {
        if (isProtectedRoute) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
-        url.cookies.delete('session');
-        return NextResponse.redirect(url);
+        // Important: Clear the invalid session cookie
+        const response = NextResponse.redirect(url);
+        response.cookies.delete('session');
+        return response;
       }
     }
   }

@@ -67,6 +67,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
 
     const updatedStaffMember = {
         name: form.name,
+        email: form.email,
         position: form.position,
         joined: form.joined,
         experience: `${form.experience || 0} Yrs`,
@@ -82,7 +83,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
       
       toast({
         title: 'Staff Member Updated',
-        description: 'The staff member\'s details have been successfully updated.',
+        description: 'The staff member\\'s details have been successfully updated.',
       });
       onStaffUpdated(); // Callback to refresh the data on the parent page
       onOpenChange(false);
@@ -111,6 +112,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
           <ScrollArea className="h-[60vh] pr-6">
             <div className="space-y-4">
                 <div><Label htmlFor="name">Full Name</Label><Input id="name" name="name" value={form.name || ''} onChange={handleFormChange} className="mt-1" required /></div>
+                <div><Label htmlFor="email">Email Address</Label><Input id="email" name="email" value={form.email || ''} onChange={handleFormChange} className="mt-1" required /></div>
                 <div><Label htmlFor="position">Position</Label><Input id="position" name="position" value={form.position || ''} onChange={handleFormChange} className="mt-1" required /></div>
                 
                 <div>

@@ -27,6 +27,7 @@ export interface Staff {
     bio: string;
     avatar: string;
     role: string;
+    email?: string;
 }
 
 export interface AssetFormData {
@@ -57,6 +58,7 @@ export interface StaffFormData {
   'staff-qualifications-score': string;
   'staff-bio': string;
   'staff-role': string;
+  'staff-email': string;
 }
 
 export interface Turnover {

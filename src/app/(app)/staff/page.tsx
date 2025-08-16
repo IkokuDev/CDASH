@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
 import { EditStaffModal } from '@/components/EditStaffModal';
+import { useData } from '../layout';
 
 async function getStaff() {
     const staffCollection = collection(db, 'staff');
@@ -51,6 +52,8 @@ export default function StaffPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const { toast } = useToast();
+  const { refreshData } = useData();
+
 
   const fetchStaff = async () => {
     const staffList = await getStaff();
@@ -60,6 +63,11 @@ export default function StaffPage() {
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  const handleStaffUpdated = () => {
+    fetchStaff();
+    refreshData();
+  }
 
   const handleEditOpen = (member: Staff) => {
     setSelectedStaff(member);
@@ -120,6 +128,7 @@ export default function StaffPage() {
             <TableHeader className="table-header">
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Position</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Date Joined</TableHead>
@@ -140,6 +149,7 @@ export default function StaffPage() {
                     </Avatar>
                     {member.name}
                   </TableCell>
+                  <TableCell>{member.email}</TableCell>
                   <TableCell>{member.position}</TableCell>
                   <TableCell>{member.role}</TableCell>
                   <TableCell>{member.joined}</TableCell>
@@ -176,7 +186,7 @@ export default function StaffPage() {
           isOpen={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           staff={selectedStaff}
-          onStaffUpdated={fetchStaff}
+          onStaffUpdated={handleStaffUpdated}
         />
       )}
 

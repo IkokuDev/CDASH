@@ -56,6 +56,7 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
 
     const newStaffMember: Omit<Staff, 'id'> = {
       name: form['staff-name'] || '',
+      email: form['staff-email'] || '',
       position: form['staff-position'] || '',
       avatar: 'https://placehold.co/40x40', // Placeholder avatar
       joined: form['staff-date-joined'] || '',
@@ -103,6 +104,7 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
           <ScrollArea className="h-[60vh] pr-6">
             <div className="space-y-4">
                 <div><Label htmlFor="staff-name">Full Name</Label><Input id="staff-name" name="staff-name" value={form['staff-name'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., John Smith" required /></div>
+                <div><Label htmlFor="staff-email">Email Address</Label><Input id="staff-email" name="staff-email" type="email" value={form['staff-email'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., john.smith@example.com" required /></div>
                 <div><Label htmlFor="staff-position">Position</Label><Input id="staff-position" name="staff-position" value={form['staff-position'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., IT Manager" required /></div>
                 
                 <div>

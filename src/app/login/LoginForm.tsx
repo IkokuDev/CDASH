@@ -1,17 +1,17 @@
 
 'use client';
 
-import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, UserCredential } from 'firebase/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Terminal } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
-import { useEffect } from 'react';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 48 48" {...props}>
@@ -45,11 +45,11 @@ export default function LoginForm() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, provider);
+      // The onAuthStateChanged in the layout will handle redirection
       toast({
         title: 'Sign In Successful',
-        description: "You've been successfully signed in.",
+        description: "You've been successfully signed in. Redirecting...",
       });
-      router.push('/dashboard');
     } catch (error) {
       console.error("Authentication error: ", error);
       toast({
