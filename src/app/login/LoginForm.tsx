@@ -82,7 +82,7 @@ export default function LoginForm() {
               <AlertTitle>Authorization Error</AlertTitle>
               <AlertDescription>
                 You are not authorized to view this page. Please contact an administrator if you believe this is a mistake.
-              </AlertDescription>
+              </AlerDescription>
             </Alert>
           )}
           <div className="flex flex-col space-y-4">

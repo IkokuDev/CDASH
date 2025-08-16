@@ -20,17 +20,7 @@ export async function middleware(request: NextRequest) {
 
   if (sessionCookie) {
     try {
-      const decodedClaims = await getAuth(app).verifySessionCookie(sessionCookie, true);
-
-      if (decodedClaims.role !== 'admin') {
-         const url = request.nextUrl.clone();
-         url.pathname = '/login';
-         url.searchParams.set('error', 'unauthorized');
-         // Important: Clear the invalid session cookie
-         const response = NextResponse.redirect(url);
-         response.cookies.delete('session');
-         return response;
-      }
+      await getAuth(app).verifySessionCookie(sessionCookie, true);
       
       if (PUBLIC_ROUTES.includes(pathname)) {
           const url = request.nextUrl.clone();
