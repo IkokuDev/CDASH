@@ -1,8 +1,30 @@
 
 import {NextResponse, type NextRequest} from 'next/server';
 import {getAuth} from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import {app} from '@/lib/firebase/admin';
+import { getFirestore, doc as adminDoc, getDoc as getAdminDoc } from 'firebase-admin/firestore';
+import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
+
+
+// It's important to check if the app is already initialized to avoid errors.
+let app: App;
+if (!getApps().length) {
+  const serviceAccountString = process.env.FIREBASE_ADMIN_SDK_CONFIG_BASE64
+    ? Buffer.from(process.env.FIREBASE_ADMIN_SDK_CONFIG_BASE64, 'base64').toString('utf-8')
+    : '{}';
+
+  try {
+    const serviceAccount = JSON.parse(serviceAccountString);
+    app = initializeApp({
+      credential: cert(serviceAccount),
+    });
+  } catch (error) {
+    console.error('Error parsing Firebase Admin SDK config:', error);
+    app = initializeApp();
+  }
+
+} else {
+  app = getApp();
+}
 
 const db = getFirestore(app);
 
@@ -16,29 +38,31 @@ export async function POST(request: NextRequest) {
       const decodedToken = await getAuth(app).verifyIdToken(idToken);
       const { uid } = decodedToken;
 
-      // Check if user exists in our own user management system
-      const userDoc = await db.collection('users').doc(uid).get();
+      const userDocRef = adminDoc(db, 'users', uid);
+      const userDoc = await getAdminDoc(userDocRef);
 
       let customClaims: { organizationId?: string; role?: string } = {};
 
-      if (userDoc.exists) {
+      if (userDoc.exists()) {
           const userData = userDoc.data();
           if (userData && userData.organizationId) {
             customClaims.organizationId = userData.organizationId;
-            // The role might be stored in the staff subcollection, let's check there too for admins.
-            const staffDocRef = doc(db, `organizations/${userData.organizationId}/staff`, uid);
-            const staffDoc = await getStaffDoc(staffDocRef);
+            
+            const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
+            const staffDoc = await getAdminDoc(staffDocRef);
 
-            if (staffDoc) {
-                customClaims.role = staffDoc.role || 'Member';
+            if (staffDoc.exists()) {
+                const staffData = staffDoc.data();
+                customClaims.role = staffData?.role || 'Member';
             } else {
                  customClaims.role = userData.role || 'Member';
             }
           }
       }
       
-      // Set custom claims on the user's token
-      await getAuth(app).setCustomUserClaims(uid, customClaims);
+      if (Object.keys(customClaims).length > 0) {
+        await getAuth(app).setCustomUserClaims(uid, customClaims);
+      }
       
       const sessionCookie = await getAuth(app).createSessionCookie(idToken, {
         expiresIn,
@@ -63,14 +87,6 @@ export async function POST(request: NextRequest) {
   }
 
   return new NextResponse('Invalid authorization header', {status: 400});
-}
-
-async function getStaffDoc(staffDocRef: any) {
-    const staffDoc = await staffDocRef.get();
-    if(staffDoc.exists()) {
-        return staffDoc.data();
-    }
-    return null;
 }
 
 
