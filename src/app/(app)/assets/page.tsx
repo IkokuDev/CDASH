@@ -30,6 +30,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import type { Asset } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 const statusVariant = {
   'Active': 'default',
@@ -39,33 +40,34 @@ const statusVariant = {
 
 type AssetStatus = keyof typeof statusVariant;
 
-async function getAssets() {
-    const assetsCollection = collection(db, 'assets');
-    const q = query(assetsCollection, orderBy('name'));
-    const assetsSnapshot = await getDocs(q);
-    const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
-    return assetsList;
-}
-
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
+
 
   const fetchAssets = async () => {
-    const assetsList = await getAssets();
+    if (!user || !user.organizationId) return;
+    const orgId = user.organizationId;
+    const assetsCollection = collection(db, `organizations/${orgId}/assets`);
+    const q = query(assetsCollection, orderBy('name'));
+    const assetsSnapshot = await getDocs(q);
+    const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
     setAssets(assetsList);
   };
 
   useEffect(() => {
     fetchAssets();
-  }, []);
+  }, [user]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
   }
 
   const handleStatusChange = async (assetId: string, newStatus: AssetStatus) => {
-    const assetDocRef = doc(db, 'assets', assetId);
+    if (!user || !user.organizationId) return;
+    const orgId = user.organizationId;
+    const assetDocRef = doc(db, `organizations/${orgId}/assets`, assetId);
     try {
       await updateDoc(assetDocRef, { status: newStatus });
       toast({

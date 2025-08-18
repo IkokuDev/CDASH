@@ -1,4 +1,5 @@
 
+'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +14,8 @@ import {
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
 
 
 const definedRoles = [
@@ -22,16 +25,22 @@ const definedRoles = [
   { name: 'Read Only', permissions: ['View Only'] },
 ];
 
-async function getStaff() {
-    const staffCollection = collection(db, 'staff');
-    const staffSnapshot = await getDocs(staffCollection);
-    const staffList = staffSnapshot.docs.map(doc => doc.data() as Staff);
-    return staffList;
-}
+export default function RolesPage() {
+    const { user } = useAuth();
+    const [staff, setStaff] = useState<Staff[]>([]);
 
+    useEffect(() => {
+        async function getStaff() {
+            if (!user || !user.organizationId) return;
+            const orgId = user.organizationId;
+            const staffCollection = collection(db, `organizations/${orgId}/staff`);
+            const staffSnapshot = await getDocs(staffCollection);
+            const staffList = staffSnapshot.docs.map(doc => doc.data() as Staff);
+            setStaff(staffList);
+        }
+        getStaff();
+    }, [user]);
 
-export default async function RolesPage() {
-  const staff = await getStaff();
   
   const rolesWithCounts = definedRoles.map(role => {
     const userCount = staff.filter(member => member.role === role.name).length;
@@ -89,4 +98,3 @@ export default async function RolesPage() {
     </Card>
   );
 }
-

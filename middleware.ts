@@ -4,43 +4,48 @@ import { getAuth } from 'firebase-admin/auth';
 import { app } from '@/lib/firebase/admin';
 
 const PROTECTED_ROUTES = ['/dashboard', '/assets', '/staff', '/reports', '/settings'];
-const PUBLIC_ROUTES = ['/login'];
+const PUBLIC_ROUTES = ['/login', '/join'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session')?.value;
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
 
-  if (!sessionCookie && isProtectedRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
-  if (sessionCookie) {
-    try {
-      await getAuth(app).verifySessionCookie(sessionCookie, true);
-      
-      if (PUBLIC_ROUTES.includes(pathname)) {
-          const url = request.nextUrl.clone();
-          url.pathname = '/dashboard';
-          return NextResponse.redirect(url);
-      }
-    } catch (error) {
-      console.error('Error verifying session cookie:', error);
-       if (isProtectedRoute) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/login';
-        // Important: Clear the invalid session cookie
-        const response = NextResponse.redirect(url);
-        response.cookies.delete('session');
-        return response;
-      }
+  if (!sessionCookie) {
+    if (isProtectedRoute) {
+        return NextResponse.redirect(new URL('/login', request.url));
     }
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  try {
+    const decodedToken = await getAuth(app).verifySessionCookie(sessionCookie, true);
+    const { organizationId } = decodedToken;
+
+    if (organizationId) {
+        // User is part of an organization, allow access to protected routes
+        if (isPublicRoute && pathname !== '/join') {
+            return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
+        return NextResponse.next();
+    } else {
+        // User is authenticated but not part of an organization
+        if (pathname === '/join') {
+            return NextResponse.next();
+        } else {
+            return NextResponse.redirect(new URL('/join', request.url));
+        }
+    }
+
+  } catch (error) {
+    console.error('Error verifying session cookie:', error);
+    // Invalid cookie, clear it and redirect to login
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('session');
+    return response;
+  }
 }
 
 export const config = {

@@ -13,6 +13,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrganizationProfile, Turnover } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
 
 const ORG_PROFILE_DOC_ID = 'main_profile';
 
@@ -23,11 +24,17 @@ export default function OrganizationProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!user || !user.organizationId) {
+        setIsLoading(false);
+        return;
+      };
+      const orgId = user.organizationId;
       try {
-        const docRef = doc(db, 'organization', ORG_PROFILE_DOC_ID);
+        const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -37,12 +44,11 @@ export default function OrganizationProfilePage() {
             turnovers: data.turnovers ? data.turnovers.sort((a, b) => b.year - a.year) : []
           });
         } else {
-          // Initialize with default values if no profile exists
-          setProfile({ name: 'Smart Farmers NG', address: '123 Innovation Drive, Lagos, Nigeria', turnovers: [
-            { year: 2023, amount: 1200000000 },
-            { year: 2022, amount: 950000000 },
-            { year: 2021, amount: 800000000 },
-          ]});
+          const orgDocRef = doc(db, 'organizations', orgId);
+          const orgDocSnap = await getDoc(orgDocRef);
+          if (orgDocSnap.exists()) {
+             setProfile({ name: orgDocSnap.data().name, address: '', turnovers: []});
+          }
         }
       } catch (error) {
         console.error("Error fetching organization profile: ", error);
@@ -57,7 +63,7 @@ export default function OrganizationProfilePage() {
     };
 
     fetchProfile();
-  }, [toast]);
+  }, [user, toast]);
 
 
   const handleEdit = (year: number) => {
@@ -88,9 +94,11 @@ export default function OrganizationProfilePage() {
   };
 
   const handleSaveChanges = async () => {
+    if (!user || !user.organizationId) return;
+    const orgId = user.organizationId;
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'organization', ORG_PROFILE_DOC_ID);
+      const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);
       await setDoc(docRef, profile, { merge: true });
       toast({
         title: 'Success',

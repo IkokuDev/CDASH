@@ -1,15 +1,12 @@
 
 'use client';
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, UserCredential } from 'firebase/auth';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck, Terminal } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
-
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -24,32 +21,28 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function LoginForm() {
-  const auth = getAuth(app);
+  const { signInWithGoogle } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const provider = new GoogleAuthProvider();
-  const error = searchParams.get('error');
-
-  useEffect(() => {
-    if(error === 'unauthorized') {
-      toast({
-        variant: 'destructive',
-        title: 'Access Denied',
-        description: 'You do not have permission to access this application.',
-      });
-    }
-  }, [error, toast]);
+  const [error, setError] = useState(searchParams.get('error'));
 
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithPopup(auth, provider);
-      // The onAuthStateChanged in the layout will handle redirection
+      const result = await signInWithGoogle();
+      
       toast({
         title: 'Sign In Successful',
         description: "You've been successfully signed in. Redirecting...",
       });
+      
+      if (result.organizationId) {
+        router.push('/dashboard');
+      } else {
+        router.push('/join');
+      }
+
     } catch (error) {
       console.error("Authentication error: ", error);
       toast({

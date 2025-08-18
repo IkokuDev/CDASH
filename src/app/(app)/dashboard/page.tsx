@@ -1,9 +1,12 @@
 
+'use client';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import { db } from '@/lib/firebase';
 import type { Asset, OrganizationProfile, Staff } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
 
 const accessLogs = [
   { user: "John Smith", action: "logged in from", detail: "102.89.33.1", detailColor: "text-yellow-400" },
@@ -11,35 +14,48 @@ const accessLogs = [
   { user: "Super Admin", action: "created a new user profile for", detail: "'David Chen'" , detailColor: "text-green-400"},
 ];
 
-async function getData(): Promise<{ assets: Asset[], staff: Staff[], profile: Partial<OrganizationProfile> }> {
-    const assetsCollection = collection(db, 'assets');
-    const assetsSnapshot = await getDocs(assetsCollection);
-    const assets = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
+export default function DashboardPage() {
+  const { user } = useAuth();
+  const [data, setData] = useState<{ assets: Asset[], staff: Staff[], profile: Partial<OrganizationProfile> } | null>(null);
+  
+  useEffect(() => {
+    if (!user || !user.organizationId) return;
 
-    const staffCollection = collection(db, 'staff');
-    const staffSnapshot = await getDocs(staffCollection);
-    const staff = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
+    async function getData() {
+        const orgId = user.organizationId!;
+        const assetsCollection = collection(db, `organizations/${orgId}/assets`);
+        const assetsSnapshot = await getDocs(assetsCollection);
+        const assets = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
 
-    const profileDoc = await getDoc(doc(db, 'organization', 'main_profile'));
-    const profile = profileDoc.exists() ? profileDoc.data() as OrganizationProfile : { turnovers: [] };
-    
-    return { assets, staff, profile };
-}
+        const staffCollection = collection(db, `organizations/${orgId}/staff`);
+        const staffSnapshot = await getDocs(staffCollection);
+        const staff = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
 
-export default async function DashboardPage() {
-  const { assets, staff, profile } = await getData();
+        const profileDoc = await getDoc(doc(db, `organizations/${orgId}/profile`, 'main_profile'));
+        const profile = profileDoc.exists() ? profileDoc.data() as OrganizationProfile : { turnovers: [] };
+        
+        setData({ assets, staff, profile });
+    }
+
+    getData();
+  }, [user]);
   
   const formatCurrency = (value: number, options: Intl.NumberFormatOptions = {}) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0, ...options }).format(value);
   }
   
+  if (!data) {
+    return <div>Loading...</div>;
+  }
+
+  const { assets, staff, profile } = data;
+
   const recurrentExpenditure = assets.reduce((total, asset) => total + (asset.recurrentExpenditure || 0), 0) * 12;
   const capitalExpenditure = assets.reduce((total, asset) => total + asset.cost, 0);
   const totalStaff = staff.length;
   const monthlySalaries = staff.reduce((total, member) => {
     let salary = 0;
     if (typeof member.salary === 'string') {
-      // Handle existing string salaries like "₦400,000/m"
       salary = parseFloat(member.salary.replace(/[^0-9.-]+/g,""));
     } else if (typeof member.salary === 'number') {
       salary = member.salary;
@@ -53,7 +69,6 @@ export default async function DashboardPage() {
 
   const totalQualificationScore = staff.reduce((total, member) => total + (member.qualificationsScore || 0), 0);
   const averageIctMaturity = staff.length > 0 ? (totalQualificationScore / staff.length) : 0;
-
 
   const kpiData = [
     { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure, { notation: 'compact' }), change: "+5.2%" },

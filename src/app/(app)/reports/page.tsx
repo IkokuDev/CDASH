@@ -15,6 +15,7 @@ import { Loader2, FileText } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Asset, Staff } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
 
 const assetTypes = ['Software', 'Hardware', 'Connectivity', 'Other'];
 
@@ -26,16 +27,19 @@ export default function ReportsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchData() {
+       if (!user || !user.organizationId) return;
+       const orgId = user.organizationId;
       try {
-        const assetsCollection = collection(db, 'assets');
+        const assetsCollection = collection(db, `organizations/${orgId}/assets`);
         const assetsSnapshot = await getDocs(assetsCollection);
         const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
         setAssets(assetsList);
 
-        const staffCollection = collection(db, 'staff');
+        const staffCollection = collection(db, `organizations/${orgId}/staff`);
         const staffSnapshot = await getDocs(staffCollection);
         const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
         setStaff(staffList);
@@ -51,7 +55,7 @@ export default function ReportsPage() {
       }
     }
     fetchData();
-  }, [toast]);
+  }, [user, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -27,7 +27,22 @@ export interface Staff {
     bio: string;
     avatar: string;
     role: string;
-    email?: string;
+    email: string;
+}
+
+export interface AppUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  organizationId?: string;
+  role?: 'Admin' | 'Member';
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  // other organization-specific fields
 }
 
 export interface AssetFormData {

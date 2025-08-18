@@ -37,14 +37,8 @@ import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
 import { EditStaffModal } from '@/components/EditStaffModal';
 import { useData } from '../layout';
+import { useAuth } from '@/hooks/use-auth';
 
-async function getStaff() {
-    const staffCollection = collection(db, 'staff');
-    const q = query(staffCollection, orderBy('name'));
-    const staffSnapshot = await getDocs(q);
-    const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
-    return staffList;
-}
 
 export default function StaffPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -53,16 +47,22 @@ export default function StaffPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const { toast } = useToast();
   const { refreshData } = useData();
+  const { user } = useAuth();
 
 
   const fetchStaff = async () => {
-    const staffList = await getStaff();
+    if (!user || !user.organizationId) return;
+    const orgId = user.organizationId;
+    const staffCollection = collection(db, `organizations/${orgId}/staff`);
+    const q = query(staffCollection, orderBy('name'));
+    const staffSnapshot = await getDocs(q);
+    const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
     setStaff(staffList);
   };
   
   useEffect(() => {
     fetchStaff();
-  }, []);
+  }, [user]);
 
   const handleStaffUpdated = () => {
     fetchStaff();
@@ -80,10 +80,11 @@ export default function StaffPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedStaff) return;
+    if (!selectedStaff || !user || !user.organizationId) return;
+    const orgId = user.organizationId;
 
     try {
-      await deleteDoc(doc(db, 'staff', selectedStaff.id));
+      await deleteDoc(doc(db, `organizations/${orgId}/staff`, selectedStaff.id));
       toast({
         title: 'Staff Deleted',
         description: `${selectedStaff.name} has been removed from the directory.`,

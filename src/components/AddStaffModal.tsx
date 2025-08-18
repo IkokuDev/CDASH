@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Staff, StaffFormData } from '@/lib/types';
 import {
@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useAuth } from '@/hooks/use-auth';
 
 // This should eventually come from a central data source or API
 const roles = ['Administrator', 'ICT Manager', 'Finance Officer', 'Read Only'];
@@ -41,6 +42,7 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<StaffFormData>>({});
+  const { user } = useAuth();
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
     if (typeof e === 'string') {
@@ -52,6 +54,10 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+     if (!user || !user.organizationId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'You must be part of an organization to add staff.' });
+        return;
+    }
     setIsLoading(true);
 
     const newStaffMember: Omit<Staff, 'id'> = {
@@ -68,7 +74,8 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
     };
 
     try {
-      const docRef = await addDoc(collection(db, 'staff'), newStaffMember);
+      const orgId = user.organizationId;
+      const docRef = await addDoc(collection(db, `organizations/${orgId}/staff`), newStaffMember);
       console.log('Document written with ID: ', docRef.id);
       
       onStaffAdded();

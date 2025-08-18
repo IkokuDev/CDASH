@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useAuth } from '@/hooks/use-auth';
 
 const roles = ['Administrator', 'ICT Manager', 'Finance Officer', 'Read Only'];
 
@@ -41,6 +42,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<Staff>>({});
+  const { user } = useAuth();
 
   useEffect(() => {
     if (staff) {
@@ -61,7 +63,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!staff) return;
+    if (!staff || !user || !user.organizationId) return;
     
     setIsLoading(true);
 
@@ -78,7 +80,8 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
     };
 
     try {
-      const staffDocRef = doc(db, 'staff', staff.id);
+      const orgId = user.organizationId;
+      const staffDocRef = doc(db, `organizations/${orgId}/staff`, staff.id);
       await updateDoc(staffDocRef, updatedStaffMember);
       
       toast({

@@ -17,17 +17,16 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AddAssetModal } from '@/components/AddAssetModal';
 import { AddStaffModal } from '@/components/AddStaffModal';
-import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/use-auth';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,7 +41,7 @@ const DataContext = createContext<{ refreshData: () => void }>({ refreshData: ()
 export const useData = () => useContext(DataContext);
 
 
-function SidebarContent({ user, onSignOut, onLinkClick }: { user: User; onSignOut: () => void; onLinkClick?: () => void; }) {
+function SidebarContent({ user, onSignOut, onLinkClick }: { user: any; onSignOut: () => void; onLinkClick?: () => void; }) {
   const pathname = usePathname();
   return (
     <div className="flex flex-col justify-between bg-card p-4 h-full">
@@ -113,11 +112,9 @@ function SidebarContent({ user, onSignOut, onLinkClick }: { user: User; onSignOu
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
-  const auth = getAuth(app);
-  
-  const [user, setUser] = useState<User | null>(null);
+
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -128,44 +125,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const token = await currentUser.getIdToken();
-        // Send the token to your server to create a session cookie
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      } else {
-        setUser(null);
-        // Clear the session cookie on sign out
-        await fetch('/api/auth/session', { method: 'DELETE' });
+     if (!loading && !user) {
         router.replace('/login');
-      }
-    });
-
-    return () => unsubscribe();
-  }, [auth, router]);
-
-  const handleSignOut = async () => {
-    try {
-      await auth.signOut();
-      toast({
-        title: 'Signed Out',
-        description: 'You have been successfully signed out.',
-      });
-    } catch (error) {
-      console.error("Error signing out: ", error);
-       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to sign out. Please try again.',
-      });
-    }
-  };
+     }
+  }, [user, loading, router])
 
   const getPageTitle = () => {
     if (pathname.startsWith('/settings/organization')) return 'Organization Profile';
@@ -190,7 +153,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
   
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p>Loading...</p>
@@ -202,7 +165,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <DataContext.Provider value={{ refreshData }}>
       <div className="grid md:grid-cols-[280px_1fr] h-screen bg-background">
         <aside className="hidden md:block border-r border-border">
-          <SidebarContent user={user} onSignOut={handleSignOut} />
+          <SidebarContent user={user} onSignOut={signOut} />
         </aside>
 
         <main className="overflow-y-auto">
@@ -216,7 +179,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="p-0 border-r-0 w-[280px]">
-                    <SidebarContent user={user} onSignOut={handleSignOut} onLinkClick={() => setIsSheetOpen(false)} />
+                    <SidebarContent user={user} onSignOut={signOut} onLinkClick={() => setIsSheetOpen(false)} />
                   </SheetContent>
                 </Sheet>
               <h2 className="text-xl md:text-2xl font-bold text-foreground">{getPageTitle()}</h2>
