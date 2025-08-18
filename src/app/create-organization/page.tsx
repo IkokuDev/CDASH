@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Loader2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,12 @@ export default function CreateOrganizationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !appUser) {
+      router.push('/login');
+    }
+  }, [loading, appUser, router]);
 
   const handleCopy = () => {
     if (inviteCode) {
@@ -73,17 +79,12 @@ export default function CreateOrganizationPage() {
     }
   };
   
-  if (loading) {
+  if (loading || !appUser) {
      return (
        <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
        </div>
      )
-  }
-
-  if (!appUser) {
-    router.push('/login');
-    return null;
   }
 
   return (
