@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -86,7 +85,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
       
       toast({
         title: 'Staff Member Updated',
-        description: 'The staff member\\'s details have been successfully updated.',
+        description: "The staff member's details have been successfully updated.",
       });
       onStaffUpdated(); // Callback to refresh the data on the parent page
       onOpenChange(false);
