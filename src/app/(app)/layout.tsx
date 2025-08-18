@@ -194,12 +194,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 md:gap-4">
               <Button variant="ghost" size="icon" className="hidden md:inline-flex"><Bell /></Button>
               <Button variant="ghost" size="icon" className="hidden md:inline-flex"><MessageSquare /></Button>
-              {appUser?.role === 'Administrator' && (
-                <Button onClick={handleButtonClick}>
-                  <PlusCircle className="w-5 h-5 md:mr-2" />
-                  <span className="hidden md:inline">{getButtonText()}</span>
-                </Button>
-              )}
+              <Button onClick={handleButtonClick}>
+                <PlusCircle className="w-5 h-5 md:mr-2" />
+                <span className="hidden md:inline">{getButtonText()}</span>
+              </Button>
             </div>
           </header>
           <div className="p-4 md:p-6" key={refreshCounter}>

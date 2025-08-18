@@ -3,12 +3,13 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, Terminal } from 'lucide-react';
+import { ShieldCheck, Terminal, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 48 48" {...props}>
@@ -21,16 +22,19 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function LoginForm() {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [error, setError] = useState(searchParams.get('error'));
+  const [error] = useState(searchParams.get('error'));
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
   const handleGoogleSignIn = async () => {
+    setIsSubmitting(true);
     try {
-      const result = await signInWithGoogle();
+      const inviteCode = searchParams.get('inviteCode');
+      const result = await signInWithGoogle(inviteCode);
       
       toast({
         title: 'Sign In Successful',
@@ -40,6 +44,7 @@ export default function LoginForm() {
       if (result && result.organizationId) {
         router.push('/dashboard');
       } else {
+        // This case should ideally not be hit if inviteCode logic is sound
         router.push('/join');
       }
 
@@ -50,8 +55,17 @@ export default function LoginForm() {
         title: 'Authentication Failed',
         description: 'Could not sign in with Google. Please try again.',
       });
+      setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+     return (
+       <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+       </div>
+     )
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -79,13 +93,22 @@ export default function LoginForm() {
             </Alert>
           )}
           <div className="flex flex-col space-y-4">
-            <Button onClick={handleGoogleSignIn} variant="outline" className="w-full">
-              <GoogleIcon className="mr-2 h-5 w-5" />
-              Sign in with Google
+            <Button onClick={handleGoogleSignIn} variant="outline" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                <>
+                  <GoogleIcon className="mr-2 h-5 w-5" />
+                  Sign in with Google
+                </>
+              )}
             </Button>
           </div>
            <p className="px-8 text-center text-sm text-muted-foreground mt-6">
-            By signing in, you agree to our terms of service and privacy policy.
+            By signing in, you agree to our terms of service and privacy policy. If you don't have an account, you must first <Link href="/create-organization" className="underline">create an organization</Link> or get an invite code.
           </p>
         </CardContent>
       </Card>

@@ -4,15 +4,16 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { getAuth, onIdTokenChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, type User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { app } from '@/lib/firebase';
+import { app, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { useToast } from './use-toast';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   firebaseUser: User | null;
   appUser: AppUser | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<{ organizationId?: string } | null>;
+  signInWithGoogle: (inviteCode?: string | null) => Promise<{ organizationId?: string } | null>;
   signOut: () => void;
 }
 
@@ -30,22 +31,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (fbUser: User | null) => {
-      setFirebaseUser(fbUser);
       if (fbUser) {
         const tokenResult = await fbUser.getIdTokenResult();
         const claims = tokenResult.claims;
         
-        setAppUser({
+        const currentUser: AppUser = {
           uid: fbUser.uid,
           email: fbUser.email,
           displayName: fbUser.displayName,
           photoURL: fbUser.photoURL,
           organizationId: claims.organizationId as string | undefined,
-          role: claims.role as 'Admin' | 'Member' | undefined,
-        });
+          role: claims.role as 'Administrator' | 'Member' | undefined,
+        };
+        setAppUser(currentUser);
+        setFirebaseUser(fbUser);
 
       } else {
         setAppUser(null);
+        setFirebaseUser(null);
       }
       setLoading(false);
     });
@@ -53,10 +56,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async (): Promise<{ organizationId?: string } | null> => {
+  const signInWithGoogle = async (inviteCode?: string | null): Promise<{ organizationId?: string } | null> => {
     try {
       const result = await signInWithPopup(auth, provider);
-      const idToken = await result.user.getIdToken();
+      const fbUser = result.user;
+
+      if (inviteCode) {
+         const orgRef = doc(db, 'organizations', inviteCode);
+         const orgDoc = await getDoc(orgRef);
+
+         if (!orgDoc.exists()) {
+           throw new Error('Invalid invite code. Please check and try again.');
+         }
+
+         const userRef = doc(db, 'users', fbUser.uid);
+         await setDoc(userRef, {
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: fbUser.displayName,
+            photoURL: fbUser.photoURL,
+            organizationId: orgDoc.id,
+            role: 'Administrator', // First user becomes admin
+         });
+
+         const staffRef = doc(db, `organizations/${orgDoc.id}/staff`, fbUser.uid);
+         await setDoc(staffRef, {
+            name: fbUser.displayName || 'Admin',
+            email: fbUser.email,
+            position: 'Administrator',
+            role: 'Administrator',
+            joined: new Date().toISOString().split('T')[0],
+            avatar: fbUser.photoURL || `https://placehold.co/40x40.png`,
+            bio: 'Initial administrator account.',
+            experience: '0 Yrs',
+            salary: 0,
+            qualificationsScore: 100,
+         }, { merge: true });
+      }
+
+      const idToken = await fbUser.getIdToken(true); // force refresh
       
       const response = await fetch('/api/auth/session', {
         method: 'POST',
@@ -72,13 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sessionData = await response.json();
       return { organizationId: sessionData.organizationId };
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Authentication error: ", error);
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
-        description: 'Could not sign in with Google. Please try again.',
+        description: error.message || 'Could not sign in with Google. Please try again.',
       });
+      // Sign out to clean up a partial login
+      await firebaseSignOut(auth);
       return null;
     }
   };

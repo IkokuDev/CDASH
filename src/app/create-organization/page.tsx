@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Loader2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { addDoc, collection, getFirestore } from 'firebase/firestore';
+import { addDoc, collection, doc, getFirestore, setDoc } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
@@ -18,19 +17,12 @@ import Link from 'next/link';
 const db = getFirestore(app);
 
 export default function CreateOrganizationPage() {
-  const { appUser, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [orgName, setOrgName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !appUser) {
-      router.push('/login');
-    }
-  }, [loading, appUser, router]);
 
   const handleCopy = () => {
     if (inviteCode) {
@@ -58,7 +50,14 @@ export default function CreateOrganizationPage() {
       const orgDoc = await addDoc(orgCollection, {
         name: orgName,
         createdAt: new Date(),
-        createdBy: appUser?.uid,
+      });
+
+      // Create a default profile document
+      const profileDocRef = doc(db, `organizations/${orgDoc.id}/profile`, 'main_profile');
+      await setDoc(profileDocRef, {
+        name: orgName,
+        address: '',
+        turnovers: [],
       });
 
       setInviteCode(orgDoc.id);
@@ -78,14 +77,6 @@ export default function CreateOrganizationPage() {
       setIsSubmitting(false);
     }
   };
-  
-  if (loading || !appUser) {
-     return (
-       <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-       </div>
-     )
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -99,7 +90,7 @@ export default function CreateOrganizationPage() {
           </div>
           <CardTitle className="text-2xl">Create New Organization</CardTitle>
           <CardDescription>
-            Fill out the form below to register your company and get your invite code.
+            Register your company to get a unique invite code for your administrator.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -121,6 +112,9 @@ export default function CreateOrganizationPage() {
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create & Get Code
               </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                Already have a code? <Link href="/join" className="underline">Join here</Link>.
+              </p>
             </form>
           ) : (
             <div className="space-y-4">
@@ -128,7 +122,7 @@ export default function CreateOrganizationPage() {
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Your Invite Code</AlertTitle>
                 <AlertDescription>
-                  Share this code with the designated administrator. They will use it to join the organization.
+                  Share this code with your designated administrator. They will use it to join and set up the organization.
                 </AlertDescription>
               </Alert>
               <div className="relative">
@@ -138,7 +132,7 @@ export default function CreateOrganizationPage() {
                 </Button>
               </div>
               <Button asChild className="w-full">
-                  <Link href="/join">Go to Join Page</Link>
+                  <Link href="/login">Continue to Login</Link>
               </Button>
             </div>
           )}

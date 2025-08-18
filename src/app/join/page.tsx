@@ -2,7 +2,6 @@
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import JoinForm from './JoinForm';
-import { AuthProvider } from '@/hooks/use-auth';
 
 export default function JoinPage() {
   return (
