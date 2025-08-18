@@ -27,12 +27,12 @@ export default function ReportsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
-  const { user } = useAuth();
+  const { appUser } = useAuth();
 
   useEffect(() => {
     async function fetchData() {
-       if (!user || !user.organizationId) return;
-       const orgId = user.organizationId;
+       if (!appUser || !appUser.organizationId) return;
+       const orgId = appUser.organizationId;
       try {
         const assetsCollection = collection(db, `organizations/${orgId}/assets`);
         const assetsSnapshot = await getDocs(assetsCollection);
@@ -55,7 +55,7 @@ export default function ReportsPage() {
       }
     }
     fetchData();
-  }, [user, toast]);
+  }, [appUser, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

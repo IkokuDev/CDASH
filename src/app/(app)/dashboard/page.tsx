@@ -15,14 +15,14 @@ const accessLogs = [
 ];
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { appUser } = useAuth();
   const [data, setData] = useState<{ assets: Asset[], staff: Staff[], profile: Partial<OrganizationProfile> } | null>(null);
   
   useEffect(() => {
-    if (!user || !user.organizationId) return;
+    if (!appUser || !appUser.organizationId) return;
 
     async function getData() {
-        const orgId = user.organizationId!;
+        const orgId = appUser.organizationId!;
         const assetsCollection = collection(db, `organizations/${orgId}/assets`);
         const assetsSnapshot = await getDocs(assetsCollection);
         const assets = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
@@ -38,7 +38,7 @@ export default function DashboardPage() {
     }
 
     getData();
-  }, [user]);
+  }, [appUser]);
   
   const formatCurrency = (value: number, options: Intl.NumberFormatOptions = {}) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0, ...options }).format(value);

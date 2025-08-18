@@ -42,7 +42,7 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<StaffFormData>>({});
-  const { user } = useAuth();
+  const { appUser } = useAuth();
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
     if (typeof e === 'string') {
@@ -54,7 +54,7 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-     if (!user || !user.organizationId) {
+     if (!appUser || !appUser.organizationId) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be part of an organization to add staff.' });
         return;
     }
@@ -74,7 +74,7 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
     };
 
     try {
-      const orgId = user.organizationId;
+      const orgId = appUser.organizationId;
       // We need to use a consistent ID for user and staff docs if they represent the same person
       // However, we don't have a user ID until they sign in.
       // So, for now, we just add to staff. The user will be created on first login if they don't exist.

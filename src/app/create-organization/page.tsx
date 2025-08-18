@@ -18,7 +18,7 @@ import Link from 'next/link';
 const db = getFirestore(app);
 
 export default function CreateOrganizationPage() {
-  const { user, loading } = useAuth();
+  const { appUser, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [orgName, setOrgName] = useState('');
@@ -52,7 +52,7 @@ export default function CreateOrganizationPage() {
       const orgDoc = await addDoc(orgCollection, {
         name: orgName,
         createdAt: new Date(),
-        createdBy: user?.uid,
+        createdBy: appUser?.uid,
       });
 
       setInviteCode(orgDoc.id);
@@ -81,7 +81,7 @@ export default function CreateOrganizationPage() {
      )
   }
 
-  if (!user) {
+  if (!appUser) {
     router.push('/login');
     return null;
   }

@@ -9,7 +9,8 @@ import type { AppUser } from '@/lib/types';
 import { useToast } from './use-toast';
 
 interface AuthContextType {
-  user: AppUser | null;
+  firebaseUser: User | null;
+  appUser: AppUser | null;
   loading: boolean;
   signInWithGoogle: () => Promise<{ organizationId?: string } | null>;
   signOut: () => void;
@@ -21,28 +22,30 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser: User | null) => {
-      if (firebaseUser) {
-        const tokenResult = await firebaseUser.getIdTokenResult();
+    const unsubscribe = onIdTokenChanged(auth, async (fbUser: User | null) => {
+      setFirebaseUser(fbUser);
+      if (fbUser) {
+        const tokenResult = await fbUser.getIdTokenResult();
         const claims = tokenResult.claims;
         
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
+        setAppUser({
+          uid: fbUser.uid,
+          email: fbUser.email,
+          displayName: fbUser.displayName,
+          photoURL: fbUser.photoURL,
           organizationId: claims.organizationId as string | undefined,
           role: claims.role as 'Admin' | 'Member' | undefined,
         });
 
       } else {
-        setUser(null);
+        setAppUser(null);
       }
       setLoading(false);
     });
@@ -100,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ firebaseUser, appUser, loading, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

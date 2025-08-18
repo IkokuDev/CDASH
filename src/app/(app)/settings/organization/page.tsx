@@ -24,15 +24,15 @@ export default function OrganizationProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { appUser } = useAuth();
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!user || !user.organizationId) {
+      if (!appUser || !appUser.organizationId) {
         setIsLoading(false);
         return;
       };
-      const orgId = user.organizationId;
+      const orgId = appUser.organizationId;
       try {
         const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);
         const docSnap = await getDoc(docRef);
@@ -63,7 +63,7 @@ export default function OrganizationProfilePage() {
     };
 
     fetchProfile();
-  }, [user, toast]);
+  }, [appUser, toast]);
 
 
   const handleEdit = (year: number) => {
@@ -94,8 +94,8 @@ export default function OrganizationProfilePage() {
   };
 
   const handleSaveChanges = async () => {
-    if (!user || !user.organizationId) return;
-    const orgId = user.organizationId;
+    if (!appUser || !appUser.organizationId) return;
+    const orgId = appUser.organizationId;
     setIsSaving(true);
     try {
       const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);

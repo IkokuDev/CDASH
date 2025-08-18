@@ -42,7 +42,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<Staff>>({});
-  const { user } = useAuth();
+  const { appUser } = useAuth();
 
   useEffect(() => {
     if (staff) {
@@ -63,7 +63,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!staff || !user || !user.organizationId) return;
+    if (!staff || !appUser || !appUser.organizationId) return;
     
     setIsLoading(true);
 
@@ -80,7 +80,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
     };
 
     try {
-      const orgId = user.organizationId;
+      const orgId = appUser.organizationId;
       const staffDocRef = doc(db, `organizations/${orgId}/staff`, staff.id);
       await updateDoc(staffDocRef, updatedStaffMember);
       

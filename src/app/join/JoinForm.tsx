@@ -17,7 +17,7 @@ import Link from 'next/link';
 const db = getFirestore(app);
 
 export default function JoinForm() {
-  const { user, loading } = useAuth();
+  const { appUser, firebaseUser, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [inviteCode, setInviteCode] = useState('');
@@ -25,7 +25,7 @@ export default function JoinForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !inviteCode.trim()) {
+    if (!firebaseUser || !inviteCode.trim()) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -45,25 +45,25 @@ export default function JoinForm() {
       }
 
       // User becomes the administrator of this new organization
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, 'users', firebaseUser.uid);
       await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
         organizationId: orgDoc.id,
         role: 'Administrator', // First user becomes admin
       });
 
       // Also add this admin user to the staff collection for the org
-      const staffRef = doc(db, `organizations/${orgDoc.id}/staff`, user.uid);
+      const staffRef = doc(db, `organizations/${orgDoc.id}/staff`, firebaseUser.uid);
       await setDoc(staffRef, {
-        name: user.displayName || 'Admin',
-        email: user.email,
+        name: firebaseUser.displayName || 'Admin',
+        email: firebaseUser.email,
         position: 'Administrator',
         role: 'Administrator',
         joined: new Date().toISOString().split('T')[0],
-        avatar: user.photoURL || 'https://placehold.co/40x40',
+        avatar: firebaseUser.photoURL || 'https://placehold.co/40x40',
         bio: 'Initial administrator account.',
         experience: '0 Yrs',
         salary: 0,
@@ -76,7 +76,7 @@ export default function JoinForm() {
       });
 
       // Re-trigger session creation to get new claims
-      const idToken = await user.getIdToken(true); // Force refresh
+      const idToken = await firebaseUser.getIdToken(true); // Force refresh
       await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${idToken}` }
@@ -104,7 +104,7 @@ export default function JoinForm() {
      )
   }
 
-  if (!user) {
+  if (!appUser) {
     router.push('/login');
     return null;
   }
@@ -121,7 +121,7 @@ export default function JoinForm() {
           </div>
           <CardTitle className="text-2xl">Join an Organization</CardTitle>
           <CardDescription>
-            Welcome, {user.displayName}! Enter your invite code or{' '}
+            Welcome, {appUser.displayName}! Enter your invite code or{' '}
             <Link href="/create-organization" className="underline">create a new organization</Link>.
           </CardDescription>
         </CardHeader>

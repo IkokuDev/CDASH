@@ -26,20 +26,20 @@ const definedRoles = [
 ];
 
 export default function RolesPage() {
-    const { user } = useAuth();
+    const { appUser } = useAuth();
     const [staff, setStaff] = useState<Staff[]>([]);
 
     useEffect(() => {
         async function getStaff() {
-            if (!user || !user.organizationId) return;
-            const orgId = user.organizationId;
+            if (!appUser || !appUser.organizationId) return;
+            const orgId = appUser.organizationId;
             const staffCollection = collection(db, `organizations/${orgId}/staff`);
             const staffSnapshot = await getDocs(staffCollection);
             const staffList = staffSnapshot.docs.map(doc => doc.data() as Staff);
             setStaff(staffList);
         }
         getStaff();
-    }, [user]);
+    }, [appUser]);
 
   
   const rolesWithCounts = definedRoles.map(role => {

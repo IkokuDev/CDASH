@@ -43,12 +43,12 @@ type AssetStatus = keyof typeof statusVariant;
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { appUser } = useAuth();
 
 
   const fetchAssets = async () => {
-    if (!user || !user.organizationId) return;
-    const orgId = user.organizationId;
+    if (!appUser || !appUser.organizationId) return;
+    const orgId = appUser.organizationId;
     const assetsCollection = collection(db, `organizations/${orgId}/assets`);
     const q = query(assetsCollection, orderBy('name'));
     const assetsSnapshot = await getDocs(q);
@@ -58,15 +58,15 @@ export default function AssetsPage() {
 
   useEffect(() => {
     fetchAssets();
-  }, [user]);
+  }, [appUser]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
   }
 
   const handleStatusChange = async (assetId: string, newStatus: AssetStatus) => {
-    if (!user || !user.organizationId) return;
-    const orgId = user.organizationId;
+    if (!appUser || !appUser.organizationId) return;
+    const orgId = appUser.organizationId;
     const assetDocRef = doc(db, `organizations/${orgId}/assets`, assetId);
     try {
       await updateDoc(assetDocRef, { status: newStatus });

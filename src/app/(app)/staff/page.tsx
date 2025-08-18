@@ -47,12 +47,12 @@ export default function StaffPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const { toast } = useToast();
   const { refreshData } = useData();
-  const { user } = useAuth();
+  const { appUser } = useAuth();
 
 
   const fetchStaff = async () => {
-    if (!user || !user.organizationId) return;
-    const orgId = user.organizationId;
+    if (!appUser || !appUser.organizationId) return;
+    const orgId = appUser.organizationId;
     const staffCollection = collection(db, `organizations/${orgId}/staff`);
     const q = query(staffCollection, orderBy('name'));
     const staffSnapshot = await getDocs(q);
@@ -62,7 +62,7 @@ export default function StaffPage() {
   
   useEffect(() => {
     fetchStaff();
-  }, [user]);
+  }, [appUser]);
 
   const handleStaffUpdated = () => {
     fetchStaff();
@@ -80,8 +80,8 @@ export default function StaffPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedStaff || !user || !user.organizationId) return;
-    const orgId = user.organizationId;
+    if (!selectedStaff || !appUser || !appUser.organizationId) return;
+    const orgId = appUser.organizationId;
 
     try {
       await deleteDoc(doc(db, `organizations/${orgId}/staff`, selectedStaff.id));
@@ -137,7 +137,7 @@ export default function StaffPage() {
                 <TableHead>Salary</TableHead>
                 <TableHead>Qual. Score</TableHead>
                 <TableHead className="w-[30%]">Bio</TableHead>
-                {user?.role === 'Administrator' && <TableHead className="text-right">Actions</TableHead>}
+                {appUser?.role === 'Administrator' && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,7 +158,7 @@ export default function StaffPage() {
                   <TableCell>{formatCurrency(member.salary)}</TableCell>
                   <TableCell>{member.qualificationsScore}</TableCell>
                   <TableCell className="whitespace-normal">{member.bio}</TableCell>
-                  {user?.role === 'Administrator' && (
+                  {appUser?.role === 'Administrator' && (
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

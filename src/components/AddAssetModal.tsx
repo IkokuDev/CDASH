@@ -42,7 +42,7 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const { user } = useAuth();
+  const { appUser } = useAuth();
   
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
     if (typeof e === 'string') {
@@ -60,7 +60,7 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !user.organizationId) {
+    if (!appUser || !appUser.organizationId) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be part of an organization to add assets.' });
         return;
     }
@@ -69,7 +69,7 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
     let imageUrl = 'https://placehold.co/100x100.png';
     if (imageFile) {
       try {
-        const storageRef = ref(storage, `organizations/${user.organizationId}/assets/${Date.now()}_${imageFile.name}`);
+        const storageRef = ref(storage, `organizations/${appUser.organizationId}/assets/${Date.now()}_${imageFile.name}`);
         const uploadResult = await uploadBytes(storageRef, imageFile);
         imageUrl = await getDownloadURL(uploadResult.ref);
       } catch(error) {
@@ -119,7 +119,7 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
       };
 
       // 2. Add the new asset to Firestore
-      const orgId = user.organizationId;
+      const orgId = appUser.organizationId;
       const docRef = await addDoc(collection(db, `organizations/${orgId}/assets`), assetToSave);
       console.log('Document written with ID: ', docRef.id);
       
