@@ -75,9 +75,24 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
 
     try {
       const orgId = user.organizationId;
-      const docRef = await addDoc(collection(db, `organizations/${orgId}/staff`), newStaffMember);
-      console.log('Document written with ID: ', docRef.id);
+      // We need to use a consistent ID for user and staff docs if they represent the same person
+      // However, we don't have a user ID until they sign in.
+      // So, for now, we just add to staff. The user will be created on first login if they don't exist.
+      // A better approach would be to send an invite link.
       
+      const staffDocRef = await addDoc(collection(db, `organizations/${orgId}/staff`), newStaffMember);
+      console.log('Staff document written with ID: ', staffDocRef.id);
+      
+      // Let's also create a placeholder user document so they can log in.
+      // This is a simplified approach. Ideally, you'd use Firebase Auth to create the user.
+      const userDocRef = doc(db, 'users', newStaffMember.email); // Use email as a temporary ID
+      await setDoc(userDocRef, {
+        email: newStaffMember.email,
+        displayName: newStaffMember.name,
+        organizationId: orgId,
+        role: newStaffMember.role,
+      });
+
       onStaffAdded();
 
       toast({

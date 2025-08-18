@@ -33,8 +33,11 @@ const navLinks = [
   { href: '/assets', label: 'Assets', icon: Database },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ];
+
+const adminNavLinks = [
+  { href: '/settings', label: 'Settings', icon: Settings },
+]
 
 const DataContext = createContext<{ refreshData: () => void }>({ refreshData: () => {} });
 
@@ -43,6 +46,8 @@ export const useData = () => useContext(DataContext);
 
 function SidebarContent({ user, onSignOut, onLinkClick }: { user: any; onSignOut: () => void; onLinkClick?: () => void; }) {
   const pathname = usePathname();
+  const allNavLinks = user?.role === 'Administrator' ? [...navLinks, ...adminNavLinks] : navLinks;
+
   return (
     <div className="flex flex-col justify-between bg-card p-4 h-full">
       <div>
@@ -61,7 +66,7 @@ function SidebarContent({ user, onSignOut, onLinkClick }: { user: any; onSignOut
         </div>
         <nav className="space-y-2">
           <TooltipProvider>
-            {navLinks.map((link) => {
+            {allNavLinks.map((link) => {
               const isActive = pathname.startsWith(link.href);
               return (
                 <Tooltip key={link.href} delayDuration={0}>
@@ -133,7 +138,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const getPageTitle = () => {
     if (pathname.startsWith('/settings/organization')) return 'Organization Profile';
     if (pathname.startsWith('/settings/roles')) return 'User Groups & Privileges';
-    const currentLink = navLinks.find(link => pathname.startsWith(link.href));
+    const allLinks = user?.role === 'Administrator' ? [...navLinks, ...adminNavLinks] : navLinks;
+    const currentLink = allLinks.find(link => pathname.startsWith(link.href));
     return currentLink ? currentLink.label : 'Dashboard';
   };
   
@@ -187,10 +193,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 md:gap-4">
               <Button variant="ghost" size="icon" className="hidden md:inline-flex"><Bell /></Button>
               <Button variant="ghost" size="icon" className="hidden md:inline-flex"><MessageSquare /></Button>
-              <Button onClick={handleButtonClick}>
-                <PlusCircle className="w-5 h-5 md:mr-2" />
-                <span className="hidden md:inline">{getButtonText()}</span>
-              </Button>
+              {user?.role === 'Administrator' && (
+                <Button onClick={handleButtonClick}>
+                  <PlusCircle className="w-5 h-5 md:mr-2" />
+                  <span className="hidden md:inline">{getButtonText()}</span>
+                </Button>
+              )}
             </div>
           </header>
           <div className="p-4 md:p-6" key={refreshCounter}>
