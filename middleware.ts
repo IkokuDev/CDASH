@@ -4,7 +4,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { app } from '@/lib/firebase/admin';
 
 const PROTECTED_ROUTES = ['/dashboard', '/assets', '/staff', '/reports', '/settings'];
-const PUBLIC_ROUTES = ['/login', '/join'];
+const PUBLIC_ROUTES = ['/login', '/join', '/create-organization'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -26,13 +26,13 @@ export async function middleware(request: NextRequest) {
 
     if (organizationId) {
         // User is part of an organization, allow access to protected routes
-        if (isPublicRoute && pathname !== '/join') {
+        if (isPublicRoute && pathname !== '/join' && pathname !== '/create-organization') {
             return NextResponse.redirect(new URL('/dashboard', request.url));
         }
         return NextResponse.next();
     } else {
         // User is authenticated but not part of an organization
-        if (pathname === '/join') {
+        if (pathname === '/join' || pathname === '/create-organization') {
             return NextResponse.next();
         } else {
             return NextResponse.redirect(new URL('/join', request.url));

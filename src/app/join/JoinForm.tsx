@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
+import Link from 'next/link';
 
 const db = getFirestore(app);
 
@@ -51,7 +52,7 @@ export default function JoinForm() {
         displayName: user.displayName,
         photoURL: user.photoURL,
         organizationId: orgDoc.id,
-        role: 'Admin', // First user becomes admin
+        role: 'Administrator', // First user becomes admin
       });
 
       // Also add this admin user to the staff collection for the org
@@ -120,7 +121,8 @@ export default function JoinForm() {
           </div>
           <CardTitle className="text-2xl">Join an Organization</CardTitle>
           <CardDescription>
-            Welcome, {user.displayName}! To continue, please enter the invite code provided by your administrator.
+            Welcome, {user.displayName}! Enter your invite code or{' '}
+            <Link href="/create-organization" className="underline">create a new organization</Link>.
           </CardDescription>
         </CardHeader>
         <CardContent>
