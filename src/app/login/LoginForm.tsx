@@ -37,7 +37,7 @@ export default function LoginForm() {
         description: "You've been successfully signed in. Redirecting...",
       });
       
-      if (result.organizationId) {
+      if (result && result.organizationId) {
         router.push('/dashboard');
       } else {
         router.push('/join');
@@ -75,7 +75,7 @@ export default function LoginForm() {
               <AlertTitle>Authorization Error</AlertTitle>
               <AlertDescription>
                 You are not authorized to view this page. Please contact an administrator if you believe this is a mistake.
-              </AlerDescription>
+              </AlertDescription>
             </Alert>
           )}
           <div className="flex flex-col space-y-4">
