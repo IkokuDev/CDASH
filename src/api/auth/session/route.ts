@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const decodedToken = await getAuth(app).verifyIdToken(idToken);
-      const { uid, email } = decodedToken;
+      const { uid } = decodedToken;
 
       // Check if user exists in our own user management system
       const userDoc = await db.collection('users').doc(uid).get();
@@ -25,10 +25,12 @@ export async function POST(request: NextRequest) {
           const userData = userDoc.data();
           if (userData && userData.organizationId) {
             customClaims.organizationId = userData.organizationId;
-            customClaims.role = userData.role || 'Member';
-            await getAuth(app).setCustomUserClaims(uid, customClaims);
+            customClaims.role = userData.role || 'Member'; // Default to member if no role
           }
       }
+      
+      // Set custom claims on the user's token
+      await getAuth(app).setCustomUserClaims(uid, customClaims);
       
       const sessionCookie = await getAuth(app).createSessionCookie(idToken, {
         expiresIn,
