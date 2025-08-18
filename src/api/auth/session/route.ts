@@ -25,7 +25,15 @@ export async function POST(request: NextRequest) {
           const userData = userDoc.data();
           if (userData && userData.organizationId) {
             customClaims.organizationId = userData.organizationId;
-            customClaims.role = userData.role || 'Member'; // Default to member if no role
+            // The role might be stored in the staff subcollection, let's check there too for admins.
+            const staffDocRef = doc(db, `organizations/${userData.organizationId}/staff`, uid);
+            const staffDoc = await getStaffDoc(staffDocRef);
+
+            if (staffDoc) {
+                customClaims.role = staffDoc.role || 'Member';
+            } else {
+                 customClaims.role = userData.role || 'Member';
+            }
           }
       }
       
@@ -55,6 +63,14 @@ export async function POST(request: NextRequest) {
   }
 
   return new NextResponse('Invalid authorization header', {status: 400});
+}
+
+async function getStaffDoc(staffDocRef: any) {
+    const staffDoc = await staffDocRef.get();
+    if(staffDoc.exists()) {
+        return staffDoc.data();
+    }
+    return null;
 }
 
 
