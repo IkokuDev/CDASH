@@ -13,9 +13,9 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrganizationProfile, Turnover } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
 
 const ORG_PROFILE_DOC_ID = 'main_profile';
+const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
 
 export default function OrganizationProfilePage() {
   const [profile, setProfile] = useState<Partial<OrganizationProfile>>({ name: '', address: '', turnovers: [] });
@@ -24,15 +24,10 @@ export default function OrganizationProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { appUser } = useAuth();
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!appUser || !appUser.organizationId) {
-        setIsLoading(false);
-        return;
-      };
-      const orgId = appUser.organizationId;
+      const orgId = MOCK_ORG_ID;
       try {
         const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);
         const docSnap = await getDoc(docRef);
@@ -51,7 +46,7 @@ export default function OrganizationProfilePage() {
           }
         }
       } catch (error) {
-        console.error("Error fetching organization profile: ", error);
+        console.warn("Error fetching organization profile, this is expected if firestore is not set up: ", error);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -63,7 +58,7 @@ export default function OrganizationProfilePage() {
     };
 
     fetchProfile();
-  }, [appUser, toast]);
+  }, [toast]);
 
 
   const handleEdit = (year: number) => {
@@ -94,8 +89,7 @@ export default function OrganizationProfilePage() {
   };
 
   const handleSaveChanges = async () => {
-    if (!appUser || !appUser.organizationId) return;
-    const orgId = appUser.organizationId;
+    const orgId = MOCK_ORG_ID;
     setIsSaving(true);
     try {
       const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);

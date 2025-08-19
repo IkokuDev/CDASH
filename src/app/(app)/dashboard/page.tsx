@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import { db } from '@/lib/firebase';
 import type { Asset, OrganizationProfile, Staff } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState } from 'react';
 
 const accessLogs = [
@@ -14,31 +13,35 @@ const accessLogs = [
   { user: "Super Admin", action: "created a new user profile for", detail: "'David Chen'" , detailColor: "text-green-400"},
 ];
 
+const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
+
 export default function DashboardPage() {
-  const { appUser } = useAuth();
   const [data, setData] = useState<{ assets: Asset[], staff: Staff[], profile: Partial<OrganizationProfile> } | null>(null);
   
   useEffect(() => {
-    if (!appUser || !appUser.organizationId) return;
-
     async function getData() {
-        const orgId = appUser.organizationId!;
-        const assetsCollection = collection(db, `organizations/${orgId}/assets`);
-        const assetsSnapshot = await getDocs(assetsCollection);
-        const assets = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
+        const orgId = MOCK_ORG_ID;
+        try {
+          const assetsCollection = collection(db, `organizations/${orgId}/assets`);
+          const assetsSnapshot = await getDocs(assetsCollection);
+          const assets = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
 
-        const staffCollection = collection(db, `organizations/${orgId}/staff`);
-        const staffSnapshot = await getDocs(staffCollection);
-        const staff = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
+          const staffCollection = collection(db, `organizations/${orgId}/staff`);
+          const staffSnapshot = await getDocs(staffCollection);
+          const staff = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
 
-        const profileDoc = await getDoc(doc(db, `organizations/${orgId}/profile`, 'main_profile'));
-        const profile = profileDoc.exists() ? profileDoc.data() as OrganizationProfile : { turnovers: [] };
-        
-        setData({ assets, staff, profile });
+          const profileDoc = await getDoc(doc(db, `organizations/${orgId}/profile`, 'main_profile'));
+          const profile = profileDoc.exists() ? profileDoc.data() as OrganizationProfile : { turnovers: [] };
+          
+          setData({ assets, staff, profile });
+        } catch(e) {
+          console.warn("Could not fetch dashboard data. This is expected if Firestore is not set up.", e);
+          setData({ assets: [], staff: [], profile: { turnovers: [] } });
+        }
     }
 
     getData();
-  }, [appUser]);
+  }, []);
   
   const formatCurrency = (value: number, options: Intl.NumberFormatOptions = {}) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0, ...options }).format(value);

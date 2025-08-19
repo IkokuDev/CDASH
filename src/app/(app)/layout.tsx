@@ -1,15 +1,14 @@
 
 'use client';
 
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { useState, createContext, useContext, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   Bell,
   Database,
   LayoutDashboard,
-  LogOut,
   Menu,
   MessageSquare,
   PlusCircle,
@@ -20,14 +19,10 @@ import {
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AddAssetModal } from '@/components/AddAssetModal';
 import { AddStaffModal } from '@/components/AddStaffModal';
-import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAuth } from '@/hooks/use-auth';
-import type { AppUser } from '@/lib/types';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,9 +40,9 @@ const DataContext = createContext<{ refreshData: () => void }>({ refreshData: ()
 export const useData = () => useContext(DataContext);
 
 
-function SidebarContent({ user, onSignOut, onLinkClick }: { user: AppUser; onSignOut: () => void; onLinkClick?: () => void; }) {
+function SidebarContent({ onLinkClick }: { onLinkClick?: () => void; }) {
   const pathname = usePathname();
-  const allNavLinks = user?.role === 'Administrator' ? [...navLinks, ...adminNavLinks] : navLinks;
+  const allNavLinks = [...navLinks, ...adminNavLinks];
 
   return (
     <div className="flex flex-col justify-between bg-card p-4 h-full">
@@ -95,32 +90,12 @@ function SidebarContent({ user, onSignOut, onLinkClick }: { user: AppUser; onSig
           </TooltipProvider>
         </nav>
       </div>
-      <div className="border-t border-border pt-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={user.photoURL || 'https://placehold.co/40x40'} alt={user.displayName || 'Admin'} />
-              <AvatarFallback>{(user.displayName || 'SA').substring(0,2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-foreground">{user.displayName || 'Super Admin'}</p>
-              <p className="text-sm text-foreground/60">{user.email}</p>
-            </div>
-          </div>
-           <Button variant="ghost" size="icon" onClick={onSignOut} aria-label="Sign out">
-              <LogOut className="w-5 h-5" />
-           </Button>
-        </div>
-      </div>
     </div>
   )
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { appUser, loading, signOut } = useAuth();
-  const router = useRouter();
-
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -130,16 +105,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setRefreshCounter(prev => prev + 1);
   }, []);
 
-  useEffect(() => {
-     if (!loading && !appUser) {
-        router.replace('/login');
-     }
-  }, [appUser, loading, router])
-
   const getPageTitle = () => {
     if (pathname.startsWith('/settings/organization')) return 'Organization Profile';
     if (pathname.startsWith('/settings/roles')) return 'User Groups & Privileges';
-    const allLinks = appUser?.role === 'Administrator' ? [...navLinks, ...adminNavLinks] : navLinks;
+    const allLinks = [...navLinks, ...adminNavLinks];
     const currentLink = allLinks.find(link => pathname.startsWith(link.href));
     return currentLink ? currentLink.label : 'Dashboard';
   };
@@ -159,20 +128,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setIsAssetModalOpen(true);
     }
   }
-  
-  if (loading || !appUser) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   return (
     <DataContext.Provider value={{ refreshData }}>
       <div className="grid md:grid-cols-[280px_1fr] h-screen bg-background">
         <aside className="hidden md:block border-r border-border">
-          <SidebarContent user={appUser} onSignOut={signOut} />
+          <SidebarContent />
         </aside>
 
         <main className="overflow-y-auto">
@@ -186,7 +147,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="p-0 border-r-0 w-[280px]">
-                    <SidebarContent user={appUser} onSignOut={signOut} onLinkClick={() => setIsSheetOpen(false)} />
+                    <SidebarContent onLinkClick={() => setIsSheetOpen(false)} />
                   </SheetContent>
                 </Sheet>
               <h2 className="text-xl md:text-2xl font-bold text-foreground">{getPageTitle()}</h2>

@@ -37,8 +37,8 @@ import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
 import { EditStaffModal } from '@/components/EditStaffModal';
 import { useData } from '../layout';
-import { useAuth } from '@/hooks/use-auth';
 
+const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
 
 export default function StaffPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -47,22 +47,24 @@ export default function StaffPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const { toast } = useToast();
   const { refreshData } = useData();
-  const { appUser } = useAuth();
 
 
   const fetchStaff = async () => {
-    if (!appUser || !appUser.organizationId) return;
-    const orgId = appUser.organizationId;
+    const orgId = MOCK_ORG_ID;
     const staffCollection = collection(db, `organizations/${orgId}/staff`);
     const q = query(staffCollection, orderBy('name'));
-    const staffSnapshot = await getDocs(q);
-    const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
-    setStaff(staffList);
+    try {
+      const staffSnapshot = await getDocs(q);
+      const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
+      setStaff(staffList);
+    } catch(e) {
+        console.warn("Could not fetch staff. This is expected if Firestore is not set up.", e);
+    }
   };
   
   useEffect(() => {
     fetchStaff();
-  }, [appUser]);
+  }, []);
 
   const handleStaffUpdated = () => {
     fetchStaff();
@@ -80,8 +82,8 @@ export default function StaffPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedStaff || !appUser || !appUser.organizationId) return;
-    const orgId = appUser.organizationId;
+    if (!selectedStaff) return;
+    const orgId = MOCK_ORG_ID;
 
     try {
       await deleteDoc(doc(db, `organizations/${orgId}/staff`, selectedStaff.id));
@@ -137,7 +139,7 @@ export default function StaffPage() {
                 <TableHead>Salary</TableHead>
                 <TableHead>Qual. Score</TableHead>
                 <TableHead className="w-[30%]">Bio</TableHead>
-                {appUser?.role === 'Administrator' && <TableHead className="text-right">Actions</TableHead>}
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,25 +160,23 @@ export default function StaffPage() {
                   <TableCell>{formatCurrency(member.salary)}</TableCell>
                   <TableCell>{member.qualificationsScore}</TableCell>
                   <TableCell className="whitespace-normal">{member.bio}</TableCell>
-                  {appUser?.role === 'Administrator' && (
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditOpen(member)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteOpen(member)} className="text-destructive">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  )}
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditOpen(member)}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteOpen(member)} className="text-destructive">
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

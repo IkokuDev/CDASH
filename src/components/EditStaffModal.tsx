@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,9 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAuth } from '@/hooks/use-auth';
 
 const roles = ['Administrator', 'ICT Manager', 'Finance Officer', 'Read Only'];
+const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
 
 interface EditStaffModalProps {
   isOpen: boolean;
@@ -41,7 +42,6 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Partial<Staff>>({});
-  const { appUser } = useAuth();
 
   useEffect(() => {
     if (staff) {
@@ -62,7 +62,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!staff || !appUser || !appUser.organizationId) return;
+    if (!staff) return;
     
     setIsLoading(true);
 
@@ -79,7 +79,7 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
     };
 
     try {
-      const orgId = appUser.organizationId;
+      const orgId = MOCK_ORG_ID;
       const staffDocRef = doc(db, `organizations/${orgId}/staff`, staff.id);
       await updateDoc(staffDocRef, updatedStaffMember);
       

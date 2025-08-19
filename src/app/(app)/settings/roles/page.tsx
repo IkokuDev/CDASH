@@ -14,7 +14,6 @@ import {
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState } from 'react';
 
 
@@ -25,21 +24,25 @@ const definedRoles = [
   { name: 'Read Only', permissions: ['View Only'] },
 ];
 
+const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
+
 export default function RolesPage() {
-    const { appUser } = useAuth();
     const [staff, setStaff] = useState<Staff[]>([]);
 
     useEffect(() => {
         async function getStaff() {
-            if (!appUser || !appUser.organizationId) return;
-            const orgId = appUser.organizationId;
-            const staffCollection = collection(db, `organizations/${orgId}/staff`);
-            const staffSnapshot = await getDocs(staffCollection);
-            const staffList = staffSnapshot.docs.map(doc => doc.data() as Staff);
-            setStaff(staffList);
+            const orgId = MOCK_ORG_ID;
+            try {
+              const staffCollection = collection(db, `organizations/${orgId}/staff`);
+              const staffSnapshot = await getDocs(staffCollection);
+              const staffList = staffSnapshot.docs.map(doc => doc.data() as Staff);
+              setStaff(staffList);
+            } catch(e) {
+              console.warn("Could not fetch staff. This is expected if Firestore is not set up.", e);
+            }
         }
         getStaff();
-    }, [appUser]);
+    }, []);
 
   
   const rolesWithCounts = definedRoles.map(role => {

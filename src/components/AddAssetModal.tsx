@@ -29,7 +29,6 @@ import { addDoc, collection } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { Asset } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
 
 interface AddAssetModalProps {
   isOpen: boolean;
@@ -37,12 +36,13 @@ interface AddAssetModalProps {
   onAssetAdded: () => void;
 }
 
+const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
+
 export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const { appUser } = useAuth();
   
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
     if (typeof e === 'string') {
@@ -60,16 +60,13 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!appUser || !appUser.organizationId) {
-        toast({ variant: 'destructive', title: 'Error', description: 'You must be part of an organization to add assets.' });
-        return;
-    }
+    const orgId = MOCK_ORG_ID;
     setIsLoading(true);
 
     let imageUrl = 'https://placehold.co/100x100.png';
     if (imageFile) {
       try {
-        const storageRef = ref(storage, `organizations/${appUser.organizationId}/assets/${Date.now()}_${imageFile.name}`);
+        const storageRef = ref(storage, `organizations/${orgId}/assets/${Date.now()}_${imageFile.name}`);
         const uploadResult = await uploadBytes(storageRef, imageFile);
         imageUrl = await getDownloadURL(uploadResult.ref);
       } catch(error) {
@@ -119,7 +116,6 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
       };
 
       // 2. Add the new asset to Firestore
-      const orgId = appUser.organizationId;
       const docRef = await addDoc(collection(db, `organizations/${orgId}/assets`), assetToSave);
       console.log('Document written with ID: ', docRef.id);
       

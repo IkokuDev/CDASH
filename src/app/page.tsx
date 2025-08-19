@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -8,7 +9,7 @@ export default function InitializationPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/join');
+    router.replace('/dashboard');
   }, [router]);
 
   return (

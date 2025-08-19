@@ -30,7 +30,6 @@ import { MoreHorizontal } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import type { Asset } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 
 const statusVariant = {
   'Active': 'default',
@@ -40,33 +39,37 @@ const statusVariant = {
 
 type AssetStatus = keyof typeof statusVariant;
 
+const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
+
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const { toast } = useToast();
-  const { appUser } = useAuth();
 
 
   const fetchAssets = async () => {
-    if (!appUser || !appUser.organizationId) return;
-    const orgId = appUser.organizationId;
+    // Using a mock organization ID for now
+    const orgId = MOCK_ORG_ID;
     const assetsCollection = collection(db, `organizations/${orgId}/assets`);
     const q = query(assetsCollection, orderBy('name'));
-    const assetsSnapshot = await getDocs(q);
-    const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
-    setAssets(assetsList);
+    try {
+      const assetsSnapshot = await getDocs(q);
+      const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
+      setAssets(assetsList);
+    } catch(e) {
+        console.warn("Could not fetch assets. This is expected if Firestore is not set up.", e)
+    }
   };
 
   useEffect(() => {
     fetchAssets();
-  }, [appUser]);
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
   }
 
   const handleStatusChange = async (assetId: string, newStatus: AssetStatus) => {
-    if (!appUser || !appUser.organizationId) return;
-    const orgId = appUser.organizationId;
+    const orgId = MOCK_ORG_ID;
     const assetDocRef = doc(db, `organizations/${orgId}/assets`, assetId);
     try {
       await updateDoc(assetDocRef, { status: newStatus });
