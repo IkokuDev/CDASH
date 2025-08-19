@@ -86,15 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             displayName: fbUser.displayName,
             photoURL: fbUser.photoURL,
             organizationId: organizationId,
-            role: 'Administrator', // First user with an invite code becomes an Administrator.
+            role: 'Administrator',
             createdAt: serverTimestamp(),
          });
 
          // 2. Create the staff document within the organization, using the user's UID as the document ID.
-         // This is the source of truth for their role within the organization.
          const staffRef = doc(db, `organizations/${organizationId}/staff`, fbUser.uid);
          batch.set(staffRef, {
-            id: fbUser.uid, // Explicitly set the ID to match the user's UID
+            id: fbUser.uid, 
             name: fbUser.displayName || 'Admin User',
             email: fbUser.email,
             position: 'Administrator',
@@ -108,10 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          });
 
          await batch.commit();
+      } else if (!userDoc.exists() && !inviteCode) {
+        throw new Error('This account is not associated with an organization. Please use an invite code to join.');
       }
-
-      // We must get a fresh token AFTER any potential database writes
-      // to ensure custom claims are picked up if they need to be set.
+      
       const idToken = await fbUser.getIdToken(true); 
       
       const response = await fetch('/api/auth/session', {
@@ -129,12 +128,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const sessionData = await response.json();
 
-      // The final organizationId comes from the session creation response.
-      // This is the source of truth for the client.
       if (!sessionData.organizationId) {
-        // This can happen if the user exists but isn't associated with an org.
         throw new Error('No organization associated with this account. Please use an invite code.');
       }
+      
+      await fbUser.getIdToken(true); // Force refresh token to get new claims on client.
       
       return { organizationId: sessionData.organizationId };
 
@@ -145,9 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Authentication Failed',
         description: error.message || 'Could not sign in with Google. Please try again.',
       });
-      // Signing out ensures we don't leave the user in a weird, partially-logged-in state.
-      await firebaseSignOut(auth);
-      // Also clear any potentially bad session cookie from the server
+      await firebaseSignOut(auth).catch(() => {});
       await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
       return null;
     }

@@ -1,10 +1,9 @@
 
 import {NextResponse, type NextRequest} from 'next/server';
 import {getAuth} from 'firebase-admin/auth';
-import { getFirestore, doc as adminDoc, getDoc as getAdminDoc } from 'firebase-admin/firestore';
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 
-
+import { getFirestore } from 'firebase-admin/firestore';
 // It's important to check if the app is already initialized to avoid errors.
 let app: App;
 if (!getApps().length) {
@@ -38,23 +37,23 @@ export async function POST(request: NextRequest) {
       const decodedToken = await getAuth(app).verifyIdToken(idToken);
       const { uid } = decodedToken;
 
-      const userDocRef = adminDoc(db, 'users', uid);
-      const userDoc = await getAdminDoc(userDocRef);
+      const userDocRef = db.doc(`users/${uid}`);
+      const userDoc = await userDocRef.get();
 
       let customClaims: { organizationId?: string; role?: string } = {};
 
-      if (userDoc.exists()) {
+      if (userDoc.exists) {
           const userData = userDoc.data();
           if (userData && userData.organizationId) {
-            customClaims.organizationId = userData.organizationId;
+            customClaims.organizationId = userData.organizationId as string;
             
-            const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
-            const staffDoc = await getAdminDoc(staffDocRef);
+            const staffDocRef = db.doc(`organizations/${userData.organizationId}/staff/${uid}`);
+            const staffDoc = await staffDocRef.get();
 
-            if (staffDoc.exists()) {
+            if (staffDoc.exists) {
                 const staffData = staffDoc.data();
                 customClaims.role = staffData?.role || 'Member';
-            } else {
+            } else { // Fallback to user document role if staff document doesn't exist
                  customClaims.role = userData.role || 'Member';
             }
           }
