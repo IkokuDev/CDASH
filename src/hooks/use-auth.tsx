@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: 'Administrator', // First user to join via code becomes admin
          }, { merge: true });
 
-         // Set the staff document within the organization
+         // Set the staff document within the organization, using the user's UID as the document ID
          const staffRef = doc(db, `organizations/${organizationId}/staff`, fbUser.uid);
          batch.set(staffRef, {
             id: fbUser.uid,
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             experience: '0 Yrs',
             salary: 0,
             qualificationsScore: 100,
-         }, { merge: true });
+         });
 
          await batch.commit();
       }
