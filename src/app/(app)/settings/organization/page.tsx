@@ -9,8 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Building, Loader2 } from 'lucide-react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrganizationProfile, Turnover } from '@/lib/types';
 
@@ -29,22 +27,8 @@ export default function OrganizationProfilePage() {
     const fetchProfile = async () => {
       const orgId = MOCK_ORG_ID;
       try {
-        const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data() as OrganizationProfile;
-           setProfile({
-            ...data,
-            turnovers: data.turnovers ? data.turnovers.sort((a, b) => b.year - a.year) : []
-          });
-        } else {
-          const orgDocRef = doc(db, 'organizations', orgId);
-          const orgDocSnap = await getDoc(orgDocRef);
-          if (orgDocSnap.exists()) {
-             setProfile({ name: orgDocSnap.data().name, address: '', turnovers: []});
-          }
-        }
+        // Data fetching logic removed
+        setProfile({ name: 'Mock Organization', address: '123 Mock Street', turnovers: []});
       } catch (error) {
         console.warn("Error fetching organization profile, this is expected if firestore is not set up: ", error);
         toast({
@@ -92,8 +76,7 @@ export default function OrganizationProfilePage() {
     const orgId = MOCK_ORG_ID;
     setIsSaving(true);
     try {
-      const docRef = doc(db, `organizations/${orgId}/profile`, ORG_PROFILE_DOC_ID);
-      await setDoc(docRef, profile, { merge: true });
+      // Data saving logic removed
       toast({
         title: 'Success',
         description: 'Organization profile has been saved successfully.',

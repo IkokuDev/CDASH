@@ -11,8 +11,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
 import { useEffect, useState } from 'react';
 
@@ -33,10 +31,8 @@ export default function RolesPage() {
         async function getStaff() {
             const orgId = MOCK_ORG_ID;
             try {
-              const staffCollection = collection(db, `organizations/${orgId}/staff`);
-              const staffSnapshot = await getDocs(staffCollection);
-              const staffList = staffSnapshot.docs.map(doc => doc.data() as Staff);
-              setStaff(staffList);
+              // Data fetching logic removed
+              setStaff([]);
             } catch(e) {
               console.warn("Could not fetch staff. This is expected if Firestore is not set up.", e);
             }

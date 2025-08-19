@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, orderBy, query, deleteDoc, doc } from 'firebase/firestore';
 import { MoreHorizontal } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,7 +32,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
 import { EditStaffModal } from '@/components/EditStaffModal';
 import { useData } from '../layout';
@@ -51,12 +49,9 @@ export default function StaffPage() {
 
   const fetchStaff = async () => {
     const orgId = MOCK_ORG_ID;
-    const staffCollection = collection(db, `organizations/${orgId}/staff`);
-    const q = query(staffCollection, orderBy('name'));
     try {
-      const staffSnapshot = await getDocs(q);
-      const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
-      setStaff(staffList);
+      // Data fetching logic removed
+      setStaff([]);
     } catch(e) {
         console.warn("Could not fetch staff. This is expected if Firestore is not set up.", e);
     }
@@ -86,7 +81,7 @@ export default function StaffPage() {
     const orgId = MOCK_ORG_ID;
 
     try {
-      await deleteDoc(doc(db, `organizations/${orgId}/staff`, selectedStaff.id));
+      // Deletion logic removed
       toast({
         title: 'Staff Deleted',
         description: `${selectedStaff.name} has been removed from the directory.`,

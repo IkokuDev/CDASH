@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -27,7 +26,6 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
-import { db } from '@/lib/firebase';
 import type { Asset } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,15 +47,8 @@ export default function AssetsPage() {
   const fetchAssets = async () => {
     // Using a mock organization ID for now
     const orgId = MOCK_ORG_ID;
-    const assetsCollection = collection(db, `organizations/${orgId}/assets`);
-    const q = query(assetsCollection, orderBy('name'));
-    try {
-      const assetsSnapshot = await getDocs(q);
-      const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
-      setAssets(assetsList);
-    } catch(e) {
-        console.warn("Could not fetch assets. This is expected if Firestore is not set up.", e)
-    }
+    // Data fetching logic removed
+    setAssets([]);
   };
 
   useEffect(() => {
@@ -70,9 +61,8 @@ export default function AssetsPage() {
 
   const handleStatusChange = async (assetId: string, newStatus: AssetStatus) => {
     const orgId = MOCK_ORG_ID;
-    const assetDocRef = doc(db, `organizations/${orgId}/assets`, assetId);
     try {
-      await updateDoc(assetDocRef, { status: newStatus });
+      // Mock update
       toast({
         title: 'Status Updated',
         description: `Asset status has been changed to ${newStatus}.`,

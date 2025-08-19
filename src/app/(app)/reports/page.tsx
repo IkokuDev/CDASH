@@ -12,8 +12,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { generateReport, ReportGenerationInput } from '@/ai/flows/report-generation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileText } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Asset, Staff } from '@/lib/types';
 
 const assetTypes = ['Software', 'Hardware', 'Connectivity', 'Other'];
@@ -32,15 +30,9 @@ export default function ReportsPage() {
     async function fetchData() {
        const orgId = MOCK_ORG_ID;
       try {
-        const assetsCollection = collection(db, `organizations/${orgId}/assets`);
-        const assetsSnapshot = await getDocs(assetsCollection);
-        const assetsList = assetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Asset));
-        setAssets(assetsList);
-
-        const staffCollection = collection(db, `organizations/${orgId}/staff`);
-        const staffSnapshot = await getDocs(staffCollection);
-        const staffList = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Staff));
-        setStaff(staffList);
+        // Data fetching logic removed
+        setAssets([]);
+        setStaff([]);
       } catch (error) {
         console.warn("Error fetching data for reports. This is expected if Firestore is not set up.", error);
         toast({

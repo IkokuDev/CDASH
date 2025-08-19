@@ -25,9 +25,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeAsset } from '@/ai/flows/asset-summary';
 import { Loader2 } from 'lucide-react';
-import { addDoc, collection } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { Asset } from '@/lib/types';
 
 interface AddAssetModalProps {
@@ -65,20 +62,8 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
 
     let imageUrl = 'https://placehold.co/100x100.png';
     if (imageFile) {
-      try {
-        const storageRef = ref(storage, `organizations/${orgId}/assets/${Date.now()}_${imageFile.name}`);
-        const uploadResult = await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(uploadResult.ref);
-      } catch(error) {
-        console.error('Error uploading image:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Image Upload Failed',
-          description: 'Could not upload the asset image. Please try again.',
-        });
-        setIsLoading(false);
-        return;
-      }
+        // Image upload logic removed
+        console.log("Mock image upload for:", imageFile.name);
     }
 
     const newAssetData = {
@@ -115,9 +100,8 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
           aiSummary: aiSummary,
       };
 
-      // 2. Add the new asset to Firestore
-      const docRef = await addDoc(collection(db, `organizations/${orgId}/assets`), assetToSave);
-      console.log('Document written with ID: ', docRef.id);
+      // 2. Add the new asset (mock)
+      console.log('Adding asset:', assetToSave);
       
       onAssetAdded();
 

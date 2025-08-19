@@ -17,8 +17,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Staff } from '@/lib/types';
 import {
   Select,
@@ -80,8 +78,8 @@ export function EditStaffModal({ isOpen, onOpenChange, staff, onStaffUpdated }: 
 
     try {
       const orgId = MOCK_ORG_ID;
-      const staffDocRef = doc(db, `organizations/${orgId}/staff`, staff.id);
-      await updateDoc(staffDocRef, updatedStaffMember);
+      // Data update logic removed
+      console.log('Updating staff member:', updatedStaffMember);
       
       toast({
         title: 'Staff Member Updated',

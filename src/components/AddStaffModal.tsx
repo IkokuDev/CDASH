@@ -17,8 +17,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Staff, StaffFormData } from '@/lib/types';
 import {
   Select,
@@ -71,8 +69,8 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
     };
 
     try {
-      const staffDocRef = await addDoc(collection(db, `organizations/${orgId}/staff`), newStaffMember);
-      console.log('Staff document written with ID: ', staffDocRef.id);
+      // Data saving logic removed
+      console.log('Adding staff member:', newStaffMember);
       
       onStaffAdded();
 
