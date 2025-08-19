@@ -71,11 +71,6 @@ export default function JoinOrganizationPage() {
               Join Organization
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            <Button variant="link" onClick={() => router.push('/create-organization')}>
-              Or create a new organization
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>

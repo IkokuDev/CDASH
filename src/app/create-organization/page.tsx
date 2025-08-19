@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,51 +59,32 @@ export default function CreateOrganizationPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-4xl space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Welcome, {appUser.displayName}!</h1>
-          <p className="text-muted-foreground">Let's get your organization set up.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 md:gap-8">
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle>Create a New Organization</CardTitle>
-              <CardDescription>
-                Set up a new workspace for you and your team.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateOrganization} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="orgName">Organization Name</Label>
-                  <Input
-                    id="orgName"
-                    value={orgName}
-                    onChange={(e) => setOrgName(e.target.value)}
-                    placeholder="e.g., Acme Corporation"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Organization
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-          <div className="md:col-span-2 mt-8 md:mt-0 flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-muted-foreground mb-4">OR</p>
-              <Button variant="outline" className="w-full" onClick={() => router.push('/join')}>
-                Join an Existing Organization
-              </Button>
-               <p className="text-xs text-muted-foreground mt-2">
-                You'll need an invite code from an administrator.
-              </p>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Create a New Organization</CardTitle>
+          <CardDescription>
+            Set up a new workspace for you and your team. This page should be restricted to administrators.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreateOrganization} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="orgName">Organization Name</Label>
+              <Input
+                id="orgName"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="e.g., Acme Corporation"
+                required
+              />
             </div>
-          </div>
-        </div>
-      </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Organization
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

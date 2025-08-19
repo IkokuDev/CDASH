@@ -16,7 +16,7 @@ export default function InitializationPage() {
         if (appUser.organizationId) {
           router.replace('/dashboard');
         } else {
-          router.replace('/create-organization');
+          router.replace('/join');
         }
       } else {
         router.replace('/login');
