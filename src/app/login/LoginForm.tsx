@@ -43,15 +43,14 @@ export default function LoginForm() {
   };
 
   useEffect(() => {
-    // This effect will run when `appUser` or `loading` state changes.
-    // It safely handles the redirect outside of the render cycle.
+    // This effect handles the redirect safely after the component has rendered.
     if (!loading && appUser?.organizationId) {
       router.replace('/dashboard');
     }
   }, [appUser, loading, router]);
 
 
-  // Show a full-page loader only during the initial auth check.
+  // 1. Show a full-page loader during the initial authentication check.
   if (loading) {
      return (
        <div className="flex h-screen items-center justify-center bg-background">
@@ -60,8 +59,8 @@ export default function LoginForm() {
      );
   }
   
-  // If not loading and the user is authenticated, they will be redirected by the useEffect.
-  // In the brief moment before redirection, we can show a loader or null.
+  // 2. If the user is authenticated, they will be redirected by the useEffect.
+  // In the brief moment before redirection, show a loader.
   if (appUser?.organizationId) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -70,7 +69,7 @@ export default function LoginForm() {
     );
   }
 
-  // If not loading and not authenticated, show the login form.
+  // 3. If not loading and not authenticated, show the login form.
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">

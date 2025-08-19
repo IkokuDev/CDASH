@@ -79,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          const batch = writeBatch(db);
 
          // 1. Create the user document in the top-level users collection.
-         // This maps their UID to their organization.
          batch.set(userDocRef, {
             uid: fbUser.uid,
             email: fbUser.email,
@@ -111,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('This account is not associated with an organization. Please use an invite code to join.');
       }
       
-      const idToken = await fbUser.getIdToken(true); 
+      const idToken = await fbUser.getIdToken(); 
       
       const response = await fetch('/api/auth/session', {
         method: 'POST',
@@ -129,10 +128,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sessionData = await response.json();
 
       if (!sessionData.organizationId) {
-        throw new Error('No organization associated with this account. Please use an invite code.');
+        // This case should ideally not be hit if the above logic is correct
+        await firebaseSignOut(auth);
+        await fetch('/api/auth/session', { method: 'DELETE' });
+        throw new Error('No organization associated with this account after sign-in.');
       }
       
-      await fbUser.getIdToken(true); // Force refresh token to get new claims on client.
+      await fbUser.getIdToken(true); // Force refresh token on client to get new claims.
       
       return { organizationId: sessionData.organizationId };
 
