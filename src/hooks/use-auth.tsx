@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
+      let organizationId = inviteCode;
 
       if (inviteCode) {
          const orgRef = doc(db, 'organizations', inviteCode);
@@ -76,8 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             displayName: fbUser.displayName,
             photoURL: fbUser.photoURL,
             organizationId: orgDoc.id,
-            role: 'Administrator', // First user becomes admin
-         });
+            role: 'Administrator', // First user to join via code becomes admin
+         }, { merge: true });
 
          const staffRef = doc(db, `organizations/${orgDoc.id}/staff`, fbUser.uid);
          await setDoc(staffRef, {
@@ -92,9 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             salary: 0,
             qualificationsScore: 100,
          }, { merge: true });
+      } else {
+          const userRef = doc(db, 'users', fbUser.uid);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+              organizationId = userDoc.data()?.organizationId;
+          }
       }
 
-      const idToken = await fbUser.getIdToken(true); // force refresh
+      // We must get a fresh token AFTER updating the user document.
+      const idToken = await fbUser.getIdToken(true); 
       
       const response = await fetch('/api/auth/session', {
         method: 'POST',
@@ -104,11 +112,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create session');
+        const errorText = await response.text();
+        console.error("Session creation failed:", errorText);
+        throw new Error('Failed to create session.');
       }
 
       const sessionData = await response.json();
-      return { organizationId: sessionData.organizationId };
+      return { organizationId: sessionData.organizationId || organizationId };
 
     } catch (error: any) {
       console.error("Authentication error: ", error);
@@ -117,7 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Authentication Failed',
         description: error.message || 'Could not sign in with Google. Please try again.',
       });
-      // Sign out to clean up a partial login
       await firebaseSignOut(auth);
       return null;
     }

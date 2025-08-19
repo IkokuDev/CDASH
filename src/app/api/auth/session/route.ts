@@ -1,7 +1,7 @@
 
 import {NextResponse, type NextRequest} from 'next/server';
 import {getAuth} from 'firebase-admin/auth';
-import { getFirestore, doc as adminDoc, getDoc as getAdminDoc, collection as adminCollection, query as adminQuery, where as adminWhere, getDocs as getAdminDocs } from 'firebase-admin/firestore';
+import { getFirestore, doc as adminDoc, getDoc as getAdminDoc } from 'firebase-admin/firestore';
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 
 
@@ -40,21 +40,30 @@ export async function POST(request: NextRequest) {
 
       let customClaims: { organizationId?: string; role?: string } = {};
 
-      // Find the user in any organization's staff collection.
-      const organizationsRef = adminCollection(db, 'organizations');
-      const orgsSnapshot = await getAdminDocs(organizationsRef);
+      const userDocRef = adminDoc(db, 'users', uid);
+      const userDoc = await getAdminDoc(userDocRef);
 
-      for (const orgDoc of orgsSnapshot.docs) {
-          const staffDocRef = adminDoc(db, `organizations/${orgDoc.id}/staff`, uid);
-          const staffDoc = await getAdminDoc(staffDocRef);
-          if (staffDoc.exists()) {
-              const staffData = staffDoc.data();
-              customClaims.organizationId = orgDoc.id;
-              customClaims.role = staffData?.role || 'Member';
-              break; 
+      if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData && userData.organizationId) {
+            customClaims.organizationId = userData.organizationId;
+            
+            // The role should also be on the user document for consistency
+            // But we can check the staff document as a fallback.
+            const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
+            const staffDoc = await getAdminDoc(staffDocRef);
+
+            if (staffDoc.exists()) {
+                const staffData = staffDoc.data();
+                customClaims.role = staffData?.role || userData.role || 'Member';
+            } else {
+                 // If no staff doc, rely on the user doc's role.
+                 customClaims.role = userData.role || 'Member';
+            }
           }
       }
       
+      // Only set claims if we have something to set
       if (Object.keys(customClaims).length > 0) {
         await getAuth(app).setCustomUserClaims(uid, customClaims);
       }

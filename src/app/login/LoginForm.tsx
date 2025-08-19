@@ -22,7 +22,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function LoginForm() {
-  const { signInWithGoogle, loading } = useAuth();
+  const { signInWithGoogle, loading, appUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -36,24 +36,20 @@ export default function LoginForm() {
       const inviteCode = searchParams.get('inviteCode');
       const result = await signInWithGoogle(inviteCode);
       
-      toast({
-        title: 'Sign In Successful',
-        description: "You've been successfully signed in. Redirecting...",
-      });
-      
       if (result?.organizationId) {
+        toast({
+          title: 'Sign In Successful',
+          description: "You've been successfully signed in. Redirecting...",
+        });
         router.push('/dashboard');
       } else {
+        // This case handles existing users without an org, or if the process fails before org assignment
         router.push('/join');
       }
 
     } catch (error) {
-      console.error("Authentication error: ", error);
-      toast({
-        variant: 'destructive',
-        title: 'Authentication Failed',
-        description: 'Could not sign in with Google. Please try again.',
-      });
+      // The useAuth hook already shows a toast on error, so we don't need another one here.
+      console.error("Authentication handle error: ", error);
       setIsSubmitting(false);
     }
   };
@@ -65,6 +61,18 @@ export default function LoginForm() {
        </div>
      )
   }
+
+  // This handles the case where the user is already logged in but somehow lands on the login page.
+  if (appUser?.organizationId) {
+      router.replace('/dashboard');
+      return (
+          <div className="flex h-screen items-center justify-center bg-background">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="ml-2">Redirecting...</p>
+          </div>
+      );
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
