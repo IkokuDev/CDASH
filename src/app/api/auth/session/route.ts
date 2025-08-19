@@ -1,7 +1,7 @@
 
 import {NextResponse, type NextRequest} from 'next/server';
 import {getAuth} from 'firebase-admin/auth';
-import { getFirestore, doc as adminDoc, getDoc as getAdminDoc } from 'firebase-admin/firestore';
+import { getFirestore, doc as adminDoc, getDoc as getAdminDoc, collection as adminCollection, query as adminQuery, where as adminWhere, getDocs as getAdminDocs } from 'firebase-admin/firestore';
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 
 
@@ -38,25 +38,20 @@ export async function POST(request: NextRequest) {
       const decodedToken = await getAuth(app).verifyIdToken(idToken);
       const { uid } = decodedToken;
 
-      const userDocRef = adminDoc(db, 'users', uid);
-      const userDoc = await getAdminDoc(userDocRef);
-
       let customClaims: { organizationId?: string; role?: string } = {};
 
-      if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData && userData.organizationId) {
-            customClaims.organizationId = userData.organizationId;
-            
-            const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
-            const staffDoc = await getAdminDoc(staffDocRef);
+      // Find the user in any organization's staff collection.
+      const organizationsRef = adminCollection(db, 'organizations');
+      const orgsSnapshot = await getAdminDocs(organizationsRef);
 
-            if (staffDoc.exists()) {
-                const staffData = staffDoc.data();
-                customClaims.role = staffData?.role || 'Member';
-            } else {
-                 customClaims.role = userData.role || 'Member';
-            }
+      for (const orgDoc of orgsSnapshot.docs) {
+          const staffDocRef = adminDoc(db, `organizations/${orgDoc.id}/staff`, uid);
+          const staffDoc = await getAdminDoc(staffDocRef);
+          if (staffDoc.exists()) {
+              const staffData = staffDoc.data();
+              customClaims.organizationId = orgDoc.id;
+              customClaims.role = staffData?.role || 'Member';
+              break; 
           }
       }
       
