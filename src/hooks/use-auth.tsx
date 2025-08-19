@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { app, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { useToast } from './use-toast';
-import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 interface AuthContextType {
   firebaseUser: User | null;
@@ -33,7 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onIdTokenChanged(auth, async (fbUser: User | null) => {
       setLoading(true);
       if (fbUser) {
-        const tokenResult = await fbUser.getIdTokenResult(true); // Force refresh of token and claims
+        // Force refresh of token to get latest custom claims
+        const tokenResult = await fbUser.getIdTokenResult(true); 
         const claims = tokenResult.claims;
         
         const currentUser: AppUser = {
@@ -42,10 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           displayName: fbUser.displayName,
           photoURL: fbUser.photoURL,
           organizationId: claims.organizationId as string | undefined,
-          role: claims.role as 'Administrator' | 'Member' | undefined,
+          role: claims.role as any,
         };
+
         setAppUser(currentUser);
         setFirebaseUser(fbUser);
+
       } else {
         setAppUser(null);
         setFirebaseUser(null);
@@ -60,28 +63,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
-      let organizationId = inviteCode;
       
       const userDocRef = doc(db, 'users', fbUser.uid);
       const userDoc = await getDoc(userDocRef);
 
-      // Scenario 1: Existing user, already has an organization
-      if (userDoc.exists() && userDoc.data()?.organizationId) {
-        organizationId = userDoc.data()?.organizationId;
-      }
-      // Scenario 2: New or existing user joining with an invite code
-      else if (inviteCode) {
+      // Scenario: New user joining with an invite code
+      if (!userDoc.exists() && inviteCode) {
          const orgRef = doc(db, 'organizations', inviteCode);
          const orgDocSnap = await getDoc(orgRef);
 
          if (!orgDocSnap.exists()) {
            throw new Error('Invalid invite code. Please check and try again.');
          }
-         organizationId = orgDocSnap.id;
-
+         const organizationId = orgDocSnap.id;
          const batch = writeBatch(db);
 
-         // Set the user document in the top-level users collection
+         // Create the user document in the top-level users collection
          batch.set(userDocRef, {
             uid: fbUser.uid,
             email: fbUser.email,
@@ -89,9 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: fbUser.photoURL,
             organizationId: organizationId,
             role: 'Administrator', // First user to join via code becomes admin
-         }, { merge: true });
+            createdAt: serverTimestamp(),
+         });
 
-         // Set the staff document within the organization, using the user's UID as the document ID
+         // Create the staff document within the organization, using the user's UID as the document ID
          const staffRef = doc(db, `organizations/${organizationId}/staff`, fbUser.uid);
          batch.set(staffRef, {
             id: fbUser.uid,
@@ -110,7 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          await batch.commit();
       }
 
-      // We must get a fresh token AFTER updating the user document to get fresh claims.
+      // We must get a fresh token AFTER any potential database writes
+      // to ensure custom claims are picked up if they need to be set.
       const idToken = await fbUser.getIdToken(true); 
       
       const response = await fetch('/api/auth/session', {
@@ -127,7 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       const sessionData = await response.json();
-      // The final organizationId comes from the session creation response
+
+      // The final organizationId comes from the session creation response.
+      // This is the source of truth.
+      if (!sessionData.organizationId) {
+        // If the server couldn't find an org, something is wrong.
+        throw new Error('No organization associated with this account.');
+      }
+      
       return { organizationId: sessionData.organizationId };
 
     } catch (error: any) {
@@ -137,7 +143,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Authentication Failed',
         description: error.message || 'Could not sign in with Google. Please try again.',
       });
+      // Signing out ensures we don't leave the user in a weird state
       await firebaseSignOut(auth);
+      await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
       return null;
     }
   };
