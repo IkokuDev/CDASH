@@ -35,7 +35,6 @@ export default function LoginForm() {
     try {
       const inviteCode = searchParams.get('inviteCode');
       await signInWithGoogle(inviteCode);
-      // The redirect is now handled by the useEffect hook
     } catch (error) {
       console.error("Login form handle error: ", error);
     } finally {
@@ -44,19 +43,34 @@ export default function LoginForm() {
   };
 
   useEffect(() => {
+    // This effect will run when `appUser` or `loading` state changes.
+    // It safely handles the redirect outside of the render cycle.
     if (!loading && appUser?.organizationId) {
       router.replace('/dashboard');
     }
-  }, [loading, appUser, router]);
+  }, [appUser, loading, router]);
 
-  if (loading || (!loading && appUser?.organizationId)) {
+
+  // Show a full-page loader only during the initial auth check.
+  if (loading) {
      return (
        <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
        </div>
-     )
+     );
+  }
+  
+  // If not loading and the user is authenticated, they will be redirected by the useEffect.
+  // In the brief moment before redirection, we can show a loader or null.
+  if (appUser?.organizationId) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+       <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
+  // If not loading and not authenticated, show the login form.
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
