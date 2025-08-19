@@ -41,10 +41,9 @@ export default function LoginForm() {
         description: "You've been successfully signed in. Redirecting...",
       });
       
-      if (result && result.organizationId) {
+      if (result?.organizationId) {
         router.push('/dashboard');
       } else {
-        // This case should ideally not be hit if inviteCode logic is sound
         router.push('/join');
       }
 
