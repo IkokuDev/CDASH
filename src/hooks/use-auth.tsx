@@ -78,28 +78,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          const organizationId = orgDocSnap.id;
          const batch = writeBatch(db);
 
-         // Create the user document in the top-level users collection
+         // 1. Create the user document in the top-level users collection.
+         // This maps their UID to their organization.
          batch.set(userDocRef, {
             uid: fbUser.uid,
             email: fbUser.email,
             displayName: fbUser.displayName,
             photoURL: fbUser.photoURL,
             organizationId: organizationId,
-            role: 'Administrator', // First user to join via code becomes admin
+            role: 'Administrator', // First user with an invite code becomes an Administrator.
             createdAt: serverTimestamp(),
          });
 
-         // Create the staff document within the organization, using the user's UID as the document ID
+         // 2. Create the staff document within the organization, using the user's UID as the document ID.
+         // This is the source of truth for their role within the organization.
          const staffRef = doc(db, `organizations/${organizationId}/staff`, fbUser.uid);
          batch.set(staffRef, {
-            id: fbUser.uid,
-            name: fbUser.displayName || 'Admin',
+            id: fbUser.uid, // Explicitly set the ID to match the user's UID
+            name: fbUser.displayName || 'Admin User',
             email: fbUser.email,
             position: 'Administrator',
             role: 'Administrator',
             joined: new Date().toISOString().split('T')[0],
             avatar: fbUser.photoURL || `https://placehold.co/40x40.png`,
-            bio: 'Initial administrator account.',
+            bio: 'Initial administrator account created via invite code.',
             experience: '0 Yrs',
             salary: 0,
             qualificationsScore: 100,
@@ -128,10 +130,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sessionData = await response.json();
 
       // The final organizationId comes from the session creation response.
-      // This is the source of truth.
+      // This is the source of truth for the client.
       if (!sessionData.organizationId) {
-        // If the server couldn't find an org, something is wrong.
-        throw new Error('No organization associated with this account.');
+        // This can happen if the user exists but isn't associated with an org.
+        throw new Error('No organization associated with this account. Please use an invite code.');
       }
       
       return { organizationId: sessionData.organizationId };
@@ -143,8 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Authentication Failed',
         description: error.message || 'Could not sign in with Google. Please try again.',
       });
-      // Signing out ensures we don't leave the user in a weird state
+      // Signing out ensures we don't leave the user in a weird, partially-logged-in state.
       await firebaseSignOut(auth);
+      // Also clear any potentially bad session cookie from the server
       await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
       return null;
     }

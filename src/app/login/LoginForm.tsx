@@ -36,25 +36,24 @@ export default function LoginForm() {
       const inviteCode = searchParams.get('inviteCode');
       const result = await signInWithGoogle(inviteCode);
       
+      // The signInWithGoogle function now reliably returns the organizationId on success.
       if (result?.organizationId) {
         toast({
           title: 'Sign In Successful',
           description: "You've been successfully signed in. Redirecting...",
         });
+        // We no longer need to check appUser here, we can trust the result and redirect.
         router.push('/dashboard');
       } else {
-        // This case handles users who are not part of an organization.
-        toast({
-          title: 'No Organization Found',
-          description: "Please join an organization to continue.",
-        });
-        router.push('/join');
+        // If signInWithGoogle returns null, it means an error occurred and was handled (toast shown).
+        // We just need to stop the loading spinner.
+        setIsSubmitting(false);
       }
 
     } catch (error) {
-      // The useAuth hook already shows a toast on error, so we don't need another one here.
-      console.error("Authentication handle error: ", error);
-      // We explicitly stop submitting here, as the auth hook might not.
+      // This catch block is for unexpected errors during the sign-in process itself.
+      // The useAuth hook handles and toasts specific authentication errors.
+      console.error("Login form handle error: ", error);
       setIsSubmitting(false);
     }
   };
@@ -67,7 +66,7 @@ export default function LoginForm() {
      )
   }
 
-  // This handles the case where the user is already logged in but somehow lands on the login page.
+  // This handles the case where the user is already logged in and lands on the login page.
   if (appUser?.organizationId) {
       router.replace('/dashboard');
       return (
