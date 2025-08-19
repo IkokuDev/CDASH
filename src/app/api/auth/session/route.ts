@@ -19,6 +19,7 @@ if (!getApps().length) {
     });
   } catch (error) {
     console.error('Error parsing Firebase Admin SDK config:', error);
+    // Fallback initialization if config is malformed or missing
     app = initializeApp();
   }
 
@@ -48,22 +49,26 @@ export async function POST(request: NextRequest) {
           if (userData && userData.organizationId) {
             customClaims.organizationId = userData.organizationId;
             
+            // Check for role in staff collection first
             const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
             const staffDoc = await getAdminDoc(staffDocRef);
 
             if (staffDoc.exists()) {
                 const staffData = staffDoc.data();
-                customClaims.role = staffData?.role || 'Member';
+                customClaims.role = staffData?.role || 'Member'; // Default to member if role not specified
             } else {
+                 // Fallback to role on user object if not in staff
                  customClaims.role = userData.role || 'Member';
             }
           }
       }
       
+      // Set custom claims on the user's auth token
       if (Object.keys(customClaims).length > 0) {
         await getAuth(app).setCustomUserClaims(uid, customClaims);
       }
       
+      // Create session cookie
       const sessionCookie = await getAuth(app).createSessionCookie(idToken, {
         expiresIn,
       });
@@ -76,6 +81,7 @@ export async function POST(request: NextRequest) {
         secure: true,
       };
 
+      // Respond with success and the organizationId for client-side routing
       const response = NextResponse.json({ status: 'success', organizationId: customClaims.organizationId });
       response.cookies.set(options);
       return response;
