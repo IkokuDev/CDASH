@@ -8,7 +8,7 @@ export default function InitializationPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/dashboard');
+    router.replace('/join');
   }, [router]);
 
   return (

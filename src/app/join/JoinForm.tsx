@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Loader2 } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -42,8 +41,7 @@ export default function JoinForm() {
           </div>
           <CardTitle className="text-2xl">Join an Organization</CardTitle>
           <CardDescription>
-            Enter the invite code provided by your administrator. Or, you can{' '}
-            <Link href="/create-organization" className="underline">create a new organization</Link>.
+            Enter the invite code provided by your administrator to get started.
           </CardDescription>
         </CardHeader>
         <CardContent>
