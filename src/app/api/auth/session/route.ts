@@ -1,6 +1,32 @@
+
 import {NextResponse, type NextRequest} from 'next/server';
 import {getAuth} from 'firebase-admin/auth';
-import {app} from '@/lib/firebase/admin';
+import { getFirestore, doc as adminDoc, getDoc as getAdminDoc } from 'firebase-admin/firestore';
+import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
+
+
+// It's important to check if the app is already initialized to avoid errors.
+let app: App;
+if (!getApps().length) {
+  const serviceAccountString = process.env.FIREBASE_ADMIN_SDK_CONFIG_BASE64
+    ? Buffer.from(process.env.FIREBASE_ADMIN_SDK_CONFIG_BASE64, 'base64').toString('utf-8')
+    : '{}';
+
+  try {
+    const serviceAccount = JSON.parse(serviceAccountString);
+    app = initializeApp({
+      credential: cert(serviceAccount),
+    });
+  } catch (error) {
+    console.error('Error parsing Firebase Admin SDK config:', error);
+    app = initializeApp();
+  }
+
+} else {
+  app = getApp();
+}
+
+const db = getFirestore(app);
 
 export async function POST(request: NextRequest) {
   const authorization = request.headers.get('Authorization');
@@ -9,9 +35,39 @@ export async function POST(request: NextRequest) {
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
 
     try {
+      const decodedToken = await getAuth(app).verifyIdToken(idToken);
+      const { uid } = decodedToken;
+
+      const userDocRef = adminDoc(db, 'users', uid);
+      const userDoc = await getAdminDoc(userDocRef);
+
+      let customClaims: { organizationId?: string; role?: string } = {};
+
+      if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData && userData.organizationId) {
+            customClaims.organizationId = userData.organizationId;
+            
+            const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
+            const staffDoc = await getAdminDoc(staffDocRef);
+
+            if (staffDoc.exists()) {
+                const staffData = staffDoc.data();
+                customClaims.role = staffData?.role || 'Member';
+            } else {
+                 customClaims.role = userData.role || 'Member';
+            }
+          }
+      }
+      
+      if (Object.keys(customClaims).length > 0) {
+        await getAuth(app).setCustomUserClaims(uid, customClaims);
+      }
+      
       const sessionCookie = await getAuth(app).createSessionCookie(idToken, {
         expiresIn,
       });
+
       const options = {
         name: 'session',
         value: sessionCookie,
@@ -20,11 +76,12 @@ export async function POST(request: NextRequest) {
         secure: true,
       };
 
-      const response = new NextResponse('Session created', { status: 200 });
+      const response = NextResponse.json({ status: 'success', organizationId: customClaims.organizationId });
       response.cookies.set(options);
       return response;
 
     } catch (error) {
+      console.error('Error creating session:', error);
       return new NextResponse('Unauthorized', {status: 401});
     }
   }
