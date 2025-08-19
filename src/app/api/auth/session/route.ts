@@ -48,23 +48,18 @@ export async function POST(request: NextRequest) {
           if (userData && userData.organizationId) {
             customClaims.organizationId = userData.organizationId;
             
-            // The user's role is stored in the staff document within their organization.
             const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
             const staffDoc = await getAdminDoc(staffDocRef);
 
             if (staffDoc.exists()) {
                 const staffData = staffDoc.data();
-                customClaims.role = staffData?.role || 'Member'; // Default to 'Member' if role is missing
+                customClaims.role = staffData?.role || 'Member';
             } else {
-                 // This case might happen if a user exists but isn't a staff member.
-                 // We can assign a default role or handle as an error.
-                 // For now, let's fall back to the role on the user doc if it exists, otherwise 'Member'.
                  customClaims.role = userData.role || 'Member';
             }
           }
       }
       
-      // If we determined claims, set them on the user's auth token
       if (Object.keys(customClaims).length > 0) {
         await getAuth(app).setCustomUserClaims(uid, customClaims);
       }
@@ -81,7 +76,6 @@ export async function POST(request: NextRequest) {
         secure: true,
       };
 
-      // The response now includes the organizationId which the client needs for routing.
       const response = NextResponse.json({ status: 'success', organizationId: customClaims.organizationId });
       response.cookies.set(options);
       return response;
