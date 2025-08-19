@@ -19,6 +19,7 @@ if (!getApps().length) {
     });
   } catch (error) {
     console.error('Error parsing Firebase Admin SDK config:', error);
+    // Initialize without credentials if config is broken, though most things will fail.
     app = initializeApp();
   }
 
@@ -38,33 +39,28 @@ export async function POST(request: NextRequest) {
       const decodedToken = await getAuth(app).verifyIdToken(idToken);
       const { uid } = decodedToken;
 
-      let customClaims: { organizationId?: string; role?: string } = {};
+      // The custom claims should ideally already be on the token if the user was just created.
+      // But we can double-check the database as a fallback.
+      let customClaims: { organizationId?: string; role?: string } = {
+        organizationId: decodedToken.organizationId,
+        role: decodedToken.role,
+      };
 
-      const userDocRef = adminDoc(db, 'users', uid);
-      const userDoc = await getAdminDoc(userDocRef);
-
-      if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData && userData.organizationId) {
-            customClaims.organizationId = userData.organizationId;
-            
-            // The role should also be on the user document for consistency
-            // But we can check the staff document as a fallback.
-            const staffDocRef = adminDoc(db, `organizations/${userData.organizationId}/staff`, uid);
-            const staffDoc = await getAdminDoc(staffDocRef);
-
-            if (staffDoc.exists()) {
-                const staffData = staffDoc.data();
-                customClaims.role = staffData?.role || userData.role || 'Member';
-            } else {
-                 // If no staff doc, rely on the user doc's role.
-                 customClaims.role = userData.role || 'Member';
+      // If claims are not on the token, check the user document as a source of truth.
+      if (!customClaims.organizationId) {
+        const userDocRef = adminDoc(db, 'users', uid);
+        const userDoc = await getAdminDoc(userDocRef);
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData && userData.organizationId) {
+              customClaims.organizationId = userData.organizationId;
+              customClaims.role = userData.role || 'Member';
             }
-          }
+        }
       }
       
-      // Only set claims if we have something to set
-      if (Object.keys(customClaims).length > 0) {
+      // If we found claims (either on token or in DB), set them on the user
+      if (customClaims.organizationId) {
         await getAuth(app).setCustomUserClaims(uid, customClaims);
       }
       

@@ -43,13 +43,18 @@ export default function LoginForm() {
         });
         router.push('/dashboard');
       } else {
-        // This case handles existing users without an org, or if the process fails before org assignment
+        // This case handles users who are not part of an organization.
+        toast({
+          title: 'No Organization Found',
+          description: "Please join an organization to continue.",
+        });
         router.push('/join');
       }
 
     } catch (error) {
       // The useAuth hook already shows a toast on error, so we don't need another one here.
       console.error("Authentication handle error: ", error);
+      // We explicitly stop submitting here, as the auth hook might not.
       setIsSubmitting(false);
     }
   };
