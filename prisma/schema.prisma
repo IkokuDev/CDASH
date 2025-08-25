@@ -1,106 +1,109 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
+// schema.prisma
+
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // or mysql/sqlite depending on your setup
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  name        String?
-  password    String
-  role        String   @default("USER")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  staffMember Staff?
 
-  @@map("users")
+
+model Asset {
+  id                  String   @id @default(cuid())
+  name                String
+  type                AssetType
+  acquired            DateTime
+  cost                Float
+  status              AssetStatus
+  summary             String
+  purpose             String
+  technicalDetails    String
+  subCategory         String
+  recurrentExpenditure Float?
+  aiSummary           String?
+  imageUrl            String?
+  ownerId             String?   // link to Staff or Organization if needed
+  organizationId      String?
+  organization        Organization? @relation(fields: [organizationId], references: [id])
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Staff {
-  id           String       @id @default(uuid())
-  userId       String       @unique
-  firstName    String
-  lastName     String
-  position     String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  user         User         @relation(fields: [userId], references: [id])
-  assignments  Assignment[]
-  departmentId String?
-  department   Department?  @relation(fields: [departmentId], references: [id])
-  auditLogs    AuditLog[]
+  id                  String   @id @default(cuid())
+  name                String
+  position            String
+  joined              DateTime
+  experience          String
+  salary              Float
+  qualificationsScore Int
+  bio                 String
+  avatar              String
+  role                String
+  email               String   @unique
+  organizationId      String?
+  organization        Organization? @relation(fields: [organizationId], references: [id])
 
-  @@map("staff")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
-model Asset {
-  id          String       @id @default(uuid())
+model AppUser {
+  uid             String   @id
+  email           String?
+  displayName     String?
+  photoURL        String?
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  role            UserRole?     @default(Member)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Organization {
+  id          String         @id @default(cuid())
   name        String
-  type        String
-  description String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  assignments Assignment[]
-  auditLogs   AuditLog[]
+  address     String
+  logoUrl     String?
+  turnovers   Turnover[]
+  assets      Asset[]
+  staff       Staff[]
+  users       AppUser[]
 
-  @@map("assets")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
-model Department {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  staff     Staff[]
+model Turnover {
+  id              String         @id @default(cuid())
+  year            Int
+  amount          Float
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
 
-  @@map("departments")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
-model Location {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  description String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  assignments Assignment[]
-
-  @@map("locations")
+enum AssetType {
+  Software
+  Hardware
+  Connectivity
+  Other
 }
 
-model Assignment {
-  id         String   @id @default(uuid())
-  staffId    String
-  assetId    String
-  locationId String
-  assignedAt DateTime @default(now())
-  returnedAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  staff    Staff    @relation(fields: [staffId], references: [id])
-  asset    Asset    @relation(fields: [assetId], references: [id])
-  location Location @relation(fields: [locationId], references: [id])
-
-  @@map("assignments")
+enum AssetStatus {
+  Active
+  Maintenance
+  Decommissioned
 }
 
-model AuditLog {
-  id        String   @id @default(uuid())
-  action    String
-  details   String?
-  staffId   String?
-  assetId   String?
-  createdAt DateTime @default(now())
-
-  staff Staff? @relation(fields: [staffId], references: [id])
-  asset Asset? @relation(fields: [assetId], references: [id])
-
-  @@map("audit_logs")
+enum UserRole {
+  Admin
+  Member
 }
