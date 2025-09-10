@@ -30,14 +30,12 @@ import type { Asset } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 const statusVariant = {
-  'Active': 'default',
-  'Maintenance': 'secondary',
+  'In Use': 'default',
+  'In Repair': 'secondary',
   'Decommissioned': 'destructive',
 } as const;
 
 type AssetStatus = keyof typeof statusVariant;
-
-const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -45,10 +43,21 @@ export default function AssetsPage() {
 
 
   const fetchAssets = async () => {
-    // Using a mock organization ID for now
-    const orgId = MOCK_ORG_ID;
-    // Data fetching logic removed
-    setAssets([]);
+    try {
+      const response = await fetch('/api/assets');
+      if (!response.ok) {
+        throw new Error('Failed to fetch assets');
+      }
+      const data = await response.json();
+      setAssets(data);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load assets. Please try again.',
+      });
+    }
   };
 
   useEffect(() => {
@@ -60,7 +69,6 @@ export default function AssetsPage() {
   }
 
   const handleStatusChange = async (assetId: string, newStatus: AssetStatus) => {
-    const orgId = MOCK_ORG_ID;
     try {
       // Mock update
       toast({
@@ -104,7 +112,7 @@ export default function AssetsPage() {
                     <PopoverTrigger asChild>
                       <button>
                         <Image
-                          src={asset.imageUrl || 'https://placehold.co/100x100.png'}
+                          src={'https://placehold.co/100x100.png'}
                           alt={asset.name}
                           width={40}
                           height={40}
@@ -115,7 +123,7 @@ export default function AssetsPage() {
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
                        <Image
-                          src={asset.imageUrl || 'https://placehold.co/400x400.png'}
+                          src={'https://placehold.co/400x400.png'}
                           alt={asset.name}
                           width={200}
                           height={200}
@@ -126,7 +134,7 @@ export default function AssetsPage() {
                 </TableCell>
                 <TableCell className="font-medium">{asset.name}</TableCell>
                 <TableCell>{asset.type}</TableCell>
-                <TableCell>{asset.acquired}</TableCell>
+                <TableCell>{new Date(asset.acquired).toLocaleDateString()}</TableCell>
                 <TableCell>{formatCurrency(asset.cost)}</TableCell>
                 <TableCell>
                   <Badge variant={statusVariant[asset.status as AssetStatus] || 'outline'}>
@@ -141,11 +149,11 @@ export default function AssetsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleStatusChange(asset.id, 'Active')}>
-                          Set to Active
+                        <DropdownMenuItem onClick={() => handleStatusChange(asset.id, 'In Use')}>
+                          Set to In Use
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange(asset.id, 'Maintenance')}>
-                          Set to Maintenance
+                        <DropdownMenuItem onClick={() => handleStatusChange(asset.id, 'In Repair')}>
+                          Set to In Repair
                         </DropdownMenuItem>
                          <DropdownMenuItem onClick={() => handleStatusChange(asset.id, 'Decommissioned')} className="text-destructive">
                           Set to Decommissioned

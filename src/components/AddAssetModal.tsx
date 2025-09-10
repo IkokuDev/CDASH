@@ -26,20 +26,20 @@ import { useToast } from '@/hooks/use-toast';
 import { summarizeAsset } from '@/ai/flows/asset-summary';
 import { Loader2 } from 'lucide-react';
 import type { Asset } from '@/lib/types';
+import { useData } from '@/app/(app)/layout';
 
 interface AddAssetModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAssetAdded: () => void;
 }
 
-const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
 
-export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetModalProps) {
+export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const { refreshData } = useData();
   
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
     if (typeof e === 'string') {
@@ -57,14 +57,7 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const orgId = MOCK_ORG_ID;
     setIsLoading(true);
-
-    let imageUrl = 'https://placehold.co/100x100.png';
-    if (imageFile) {
-        // Image upload logic removed
-        console.log("Mock image upload for:", imageFile.name);
-    }
 
     const newAssetData = {
         name: form['asset-name'] || '',
@@ -75,35 +68,44 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
         technicalDetails: form['asset-technical-details'] || '',
         type: form['asset-type'] || 'Other',
         subCategory: form['asset-subcategory-type'] || '',
-        status: 'Active', // Default status
+        status: 'In Use', // Default status
         recurrentExpenditure: Number(form['recurrent-exp-curr'] || 0),
-        imageUrl: imageUrl,
     };
 
     try {
-      // 1. Summarize asset details with AI
-      const summaryResult = await summarizeAsset({
-        name: newAssetData.name,
-        summary: newAssetData.summary,
-        dateAcquired: newAssetData.acquired,
-        costOfAcquisition: newAssetData.cost,
-        businessPurpose: newAssetData.purpose,
-        technicalDetails: newAssetData.technicalDetails,
-        type: newAssetData.type,
-        subCategoryType: newAssetData.subCategory,
-      });
+      // 1. Summarize asset details with AI if needed, or handle it differently.
+      // For now, let's skip the AI summary to focus on DB interaction.
+      // const summaryResult = await summarizeAsset(...)
       
-      const aiSummary = summaryResult.summary;
-      
-      const assetToSave: Omit<Asset, 'id'> = {
+      const assetToSave = {
           ...newAssetData,
-          aiSummary: aiSummary,
+          aiSummary: '', // Placeholder for now
+          imageUrl: '', // Placeholder for now
       };
 
-      // 2. Add the new asset (mock)
-      console.log('Adding asset:', assetToSave);
-      
-      onAssetAdded();
+      // 2. Add the new asset to the database via our API
+      const response = await fetch('/api/assets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assetToSave),
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to add asset';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // The response body wasn't valid JSON, so we'll stick with the default error message.
+          console.error("Could not parse error response JSON:", jsonError);
+        }
+        throw new Error(errorMessage);
+      }
+
+      refreshData();
 
       toast({
         title: 'Asset Added',
@@ -114,10 +116,11 @@ export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetMo
       setImageFile(null);
     } catch (error) {
       console.error('Error adding asset:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to add the asset. Please try again.',
+        description: `Failed to add the asset: ${errorMessage}`,
       });
     } finally {
       setIsLoading(false);

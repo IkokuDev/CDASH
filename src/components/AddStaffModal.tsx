@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -25,11 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useData } from '@/app/(app)/layout';
 
 // This should eventually come from a central data source or API
 const roles = ['Administrator', 'ICT Manager', 'Finance Officer', 'Read Only'];
-
-const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -40,38 +38,63 @@ interface AddStaffModalProps {
 export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [form, setForm] = useState<Partial<StaffFormData>>({});
+  const [form, setForm] = useState<Record<string, any>>({});
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const { refreshData } = useData();
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, name?: string) => {
     if (typeof e === 'string') {
        setForm(prev => ({ ...prev, [name!]: e }));
     } else {
-       setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+      if (e.target.type === 'file') {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        setImageFile(file || null);
+      } else {
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const orgId = MOCK_ORG_ID;
     setIsLoading(true);
 
-    const newStaffMember: Omit<Staff, 'id'> = {
+    const newStaffData = {
       name: form['staff-name'] || '',
-      email: form['staff-email'] || '',
       position: form['staff-position'] || '',
-      avatar: 'https://placehold.co/40x40', // Placeholder avatar
-      joined: form['staff-date-joined'] || '',
-      experience: `${form['staff-experience'] || 0} Yrs`,
+      joined_date: form['staff-date-joined'] || '',
+      experience: Number(form['staff-experience'] || 0),
       salary: Number(form['staff-salary'] || 0),
-      qualificationsScore: Number(form['staff-qualifications-score'] || 0),
+      qualifications_score: Number(form['staff-qualifications-score'] || 0),
       bio: form['staff-bio'] || '',
-      role: form['staff-role'] || 'Read Only',
+      // Note: user creation and role assignment might need separate handling
+      // depending on your auth system
     };
 
     try {
-      // Data saving logic removed
-      console.log('Adding staff member:', newStaffMember);
-      
+      // Add the new staff member to the database via our API
+      const response = await fetch('/api/staff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newStaffData),
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to add staff member';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // The response body wasn't valid JSON, so we'll stick with the default error message.
+          console.error("Could not parse error response JSON:", jsonError);
+        }
+        throw new Error(errorMessage);
+      }
+
+      refreshData();
       onStaffAdded();
 
       toast({
@@ -80,12 +103,14 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
       });
       onOpenChange(false);
       setForm({}); // Reset form
+      setImageFile(null);
     } catch (error) {
       console.error('Error adding staff member:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to add the staff member. Please try again.',
+        description: `Failed to add the staff member: ${errorMessage}`,
       });
     } finally {
       setIsLoading(false);
@@ -120,13 +145,13 @@ export function AddStaffModal({ isOpen, onOpenChange, onStaffAdded }: AddStaffMo
                   </Select>
                 </div>
 
-                <div><Label htmlFor="staff-image">Profile Image</Label><Input id="staff-image" name="staff-image" type="file" className="mt-1 file:text-sm" /></div>
+                <div><Label htmlFor="staff-image">Profile Image</Label><Input id="staff-image" name="staff-image" type="file" onChange={handleFormChange} className="mt-1 file:text-sm" /></div>
                 <div><Label htmlFor="staff-date-joined">Date Joined</Label><Input id="staff-date-joined" name="staff-date-joined" value={form['staff-date-joined'] || ''} onChange={handleFormChange} type="date" className="mt-1" required/></div>
                 <div><Label htmlFor="staff-experience">Experience (Years)</Label><Input id="staff-experience" name="staff-experience" value={form['staff-experience'] || ''} onChange={handleFormChange} type="number" className="mt-1" placeholder="e.g., 10" /></div>
                  <div><Label htmlFor="staff-salary">Salary (NGN per month)</Label><Input id="staff-salary" name="staff-salary" value={form['staff-salary'] || ''} onChange={handleFormChange} type="number" className="mt-1" placeholder="e.g., 1800000" /></div>
                  <div><Label htmlFor="staff-qualifications-score">Qualifications Score</Label><Input id="staff-qualifications-score" value={form['staff-qualifications-score'] || ''} onChange={handleFormChange} name="staff-qualifications-score" type="number" className="mt-1" placeholder="e.g., 88" /></div>
                 <div><Label htmlFor="staff-bio">Bio</Label><Textarea id="staff-bio" name="staff-bio" value={form['staff-bio'] || ''} onChange={handleFormChange} className="mt-1" rows={3} placeholder="Brief biography or description of the staff member's role." required /></div>
-                <div><Label htmlFor="staff-prev-experience-image">Previous Experience Image</Label><Input id="staff-prev-experience-image" name="staff-prev-experience-image" type="file" className="mt-1 file:text-sm" /></div>
+                <div><Label htmlFor="staff-prev-experience-image">Previous Experience Image</Label><Input id="staff-prev-experience-image" name="staff-prev-experience-image" type="file" onChange={handleFormChange} className="mt-1 file:text-sm" /></div>
             </div>
           </ScrollArea>
           <DialogFooter className="pt-6">
