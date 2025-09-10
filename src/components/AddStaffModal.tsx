@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useData } from '@/app/(app)/layout';
+import { useData } from '@/components/ClientLayout';
 
 // This should eventually come from a central data source or API
 const roles = ['Administrator', 'ICT Manager', 'Finance Officer', 'Read Only'];

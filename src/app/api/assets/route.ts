@@ -18,6 +18,10 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
 
+    // Default currency to NGN if not provided
+    const currency = data.currency || 'NGN';
+    const recurrentCurrency = data.recurrentCurrency || 'NGN';
+    
     const newAsset = await prisma.assets.create({ // Changed from 'asset' to 'assets'
       data: {
         name: data.name,
@@ -25,11 +29,13 @@ export async function POST(request: Request) {
         summary: data.summary, // Changed from 'description' to 'summary'
         acquired: new Date(data.acquired),
         cost: data.cost,
+        currency: currency,
         status: data.status,
         purpose: data.purpose,
         technical_details: data.technicalDetails,
         sub_category: data.subCategory,
         recurrent_expenditure: data.recurrentExpenditure,
+        recurrent_currency: recurrentCurrency,
       },
     });
 

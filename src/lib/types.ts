@@ -6,12 +6,18 @@ export interface Asset {
     type: 'Software' | 'Hardware' | 'Connectivity' | 'Other';
     acquired: string;
     cost: number;
+    currency: string;
+    exchangeRate?: number;
+    costInNaira?: number;
     status: 'Active' | 'Maintenance' | 'Decommissioned';
     summary: string;
     purpose: string;
     technicalDetails: string;
     subCategory: string;
     recurrentExpenditure?: number;
+    recurrentCurrency?: string;
+    recurrentExchangeRate?: number;
+    recurrentInNaira?: number;
     aiSummary?: string;
     imageUrl?: string;
 }

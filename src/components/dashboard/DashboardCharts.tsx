@@ -3,6 +3,7 @@
 
 import { Bar, BarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell as RechartsCell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/currency';
 import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import type { Asset } from '@/lib/types';
 
@@ -50,7 +51,7 @@ export default function DashboardCharts({ assets, recurrentExpenditure }: { asse
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <ResponsiveContainer>
               <BarChart data={expenditureComparisonData} layout="vertical">
-                <XAxis type="number" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${Number(value) / 1000000}M`} />
+                <XAxis type="number" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(Number(value), 'NGN', { notation: 'compact' })} />
                 <YAxis type="category" dataKey="name" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip
                   cursor={false}
@@ -82,7 +83,7 @@ export default function DashboardCharts({ assets, recurrentExpenditure }: { asse
                 content={<ChartTooltipContent hideLabel formatter={(value, name, props) => (
                     <div className="flex flex-col">
                         <span>{props.payload.name}</span>
-                        <span className="font-bold">{new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value as number)}</span>
+                        <span className="font-bold">{formatCurrency(value as number, 'NGN')}</span>
                     </div>
                 )} />}
               />

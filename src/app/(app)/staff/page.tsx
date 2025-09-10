@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatCurrency } from '@/lib/currency';
 import { MoreHorizontal } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,61 +34,92 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Staff } from '@/lib/types';
 import { EditStaffModal } from '@/components/EditStaffModal';
-import { useData } from '../layout';
-
-const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
+import { useData } from '@/components/ClientLayout';
 
 export default function StaffPage() {
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const { toast } = useToast();
-  const { refreshData } = useData();
-
 
   const fetchStaff = async () => {
-    const orgId = MOCK_ORG_ID;
+    setIsLoading(true);
     try {
-      // Data fetching logic removed
-      setStaff([]);
-    } catch(e) {
-        console.warn("Could not fetch staff. This is expected if Firestore is not set up.", e);
+      const response = await fetch('/api/staff');
+      if (response.ok) {
+        const staffData = await response.json();
+        setStaff(staffData);
+      } else {
+        console.error('Failed to fetch staff');
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load staff data.',
+        });
+      }
+    } catch (error) {
+      console.error("Could not fetch staff:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load staff data.',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
+  // Fetch staff data on component mount and when refreshData changes
   useEffect(() => {
     fetchStaff();
+  }, []); // Remove refreshData dependency since it's causing issues
+
+  // Listen for refresh events from the layout
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchStaff();
+    };
+    
+    // Custom event listener approach
+    window.addEventListener('staff-refresh', handleRefresh);
+    return () => window.removeEventListener('staff-refresh', handleRefresh);
   }, []);
 
   const handleStaffUpdated = () => {
     fetchStaff();
-    refreshData();
   }
 
-  const handleEditOpen = (member: Staff) => {
+  const handleEditOpen = (member: any) => {
     setSelectedStaff(member);
     setIsEditModalOpen(true);
   };
   
-  const handleDeleteOpen = (member: Staff) => {
+  const handleDeleteOpen = (member: any) => {
     setSelectedStaff(member);
     setIsDeleteAlertOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
     if (!selectedStaff) return;
-    const orgId = MOCK_ORG_ID;
 
     try {
-      // Deletion logic removed
-      toast({
-        title: 'Staff Deleted',
-        description: `${selectedStaff.name} has been removed from the directory.`,
+      const response = await fetch(`/api/staff/${selectedStaff.id}`, {
+        method: 'DELETE',
       });
-      fetchStaff(); // Refresh the list
+
+      if (response.ok) {
+        toast({
+          title: 'Staff Deleted',
+          description: `${selectedStaff.name} has been removed from the directory.`,
+        });
+        fetchStaff(); // Refresh the list
+      } else {
+        throw new Error('Failed to delete staff member');
+      }
     } catch (error) {
-      console.error("Error deleting staff member: ", error);
+      console.error("Error deleting staff member:", error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -100,8 +131,7 @@ export default function StaffPage() {
     }
   };
 
-  
-  const formatCurrency = (value: number | string) => {
+  const formatStaffSalary = (value: number | string) => {
     let numericValue: number;
     if (typeof value === 'string') {
       numericValue = parseFloat(value.replace(/[^0-9.-]+/g,""));
@@ -112,70 +142,90 @@ export default function StaffPage() {
     if (isNaN(numericValue)) {
       return 'N/A';
     }
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(numericValue) + '/m';
+    return formatCurrency(numericValue, 'NGN') + '/m';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>ICT Staff Directory</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center py-8">
+            <div>Loading staff data...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>ICT Staff Directory</CardTitle>
+          <CardTitle>ICT Staff Directory ({staff.length} members)</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader className="table-header">
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Date Joined</TableHead>
-                <TableHead>Experience</TableHead>
-                <TableHead>Salary</TableHead>
-                <TableHead>Qual. Score</TableHead>
-                <TableHead className="w-[30%]">Bio</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {staff.map((member) => (
-                <TableRow key={member.id} className="table-row">
-                  <TableCell className="font-medium flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person" />
-                      <AvatarFallback>{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    {member.name}
-                  </TableCell>
-                  <TableCell>{member.email}</TableCell>
-                  <TableCell>{member.position}</TableCell>
-                  <TableCell>{member.role}</TableCell>
-                  <TableCell>{member.joined}</TableCell>
-                  <TableCell>{member.experience}</TableCell>
-                  <TableCell>{formatCurrency(member.salary)}</TableCell>
-                  <TableCell>{member.qualificationsScore}</TableCell>
-                  <TableCell className="whitespace-normal">{member.bio}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditOpen(member)}>
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteOpen(member)} className="text-destructive">
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {staff.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No staff members found. Add your first staff member using the button above.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="table-header">
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Position</TableHead>
+                  <TableHead>Date Joined</TableHead>
+                  <TableHead>Experience</TableHead>
+                  <TableHead>Salary</TableHead>
+                  <TableHead>Qual. Score</TableHead>
+                  <TableHead className="w-[30%]">Bio</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {staff.map((member) => (
+                  <TableRow key={member.id} className="table-row">
+                    <TableCell className="font-medium flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback>{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {member.name}
+                    </TableCell>
+                    <TableCell>{member.position}</TableCell>
+                    <TableCell>{formatDate(member.joined_date)}</TableCell>
+                    <TableCell>{member.experience} years</TableCell>
+                    <TableCell>{formatStaffSalary(member.salary)}</TableCell>
+                    <TableCell>{member.qualifications_score}</TableCell>
+                    <TableCell className="whitespace-normal">{member.bio}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditOpen(member)}>
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteOpen(member)} className="text-destructive">
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
       

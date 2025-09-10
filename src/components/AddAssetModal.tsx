@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { CurrencySelect } from '@/components/CurrencySelect';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,18 +27,22 @@ import { useToast } from '@/hooks/use-toast';
 import { summarizeAsset } from '@/ai/flows/asset-summary';
 import { Loader2 } from 'lucide-react';
 import type { Asset } from '@/lib/types';
-import { useData } from '@/app/(app)/layout';
+import { useData } from '@/components/ClientLayout';
 
 interface AddAssetModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onAssetAdded?: () => void;
 }
 
 
-export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
+export function AddAssetModal({ isOpen, onOpenChange, onAssetAdded }: AddAssetModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [form, setForm] = useState<Record<string, any>>({});
+  const [form, setForm] = useState<Record<string, any>>({
+    'asset-currency': 'NGN',
+    'recurrent-currency': 'NGN'
+  });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const { refreshData } = useData();
   
@@ -64,12 +69,14 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
         summary: form['asset-summary'] || '',
         acquired: form['asset-date-acquired'] || '',
         cost: Number(form['asset-cost'] || 0),
+        currency: form['asset-currency'] || 'NGN',
         purpose: form['asset-purpose'] || '',
         technicalDetails: form['asset-technical-details'] || '',
         type: form['asset-type'] || 'Other',
         subCategory: form['asset-subcategory-type'] || '',
         status: 'In Use', // Default status
         recurrentExpenditure: Number(form['recurrent-exp-curr'] || 0),
+        recurrentCurrency: form['recurrent-currency'] || 'NGN',
     };
 
     try {
@@ -106,6 +113,7 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
       }
 
       refreshData();
+      if (onAssetAdded) onAssetAdded();
 
       toast({
         title: 'Asset Added',
@@ -143,7 +151,20 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
               <div><Label htmlFor="asset-icon">2. Icon/Image</Label><Input id="asset-icon" name="asset-icon" type="file" onChange={handleFormChange} className="mt-1 file:text-sm" /></div>
               <div className="md:col-span-2"><Label htmlFor="asset-summary">3. Summary</Label><Textarea id="asset-summary" name="asset-summary" value={form['asset-summary'] || ''} onChange={handleFormChange} className="mt-1" rows={2} placeholder="Brief description of the asset" required /></div>
               <div><Label htmlFor="asset-date-acquired">4. Date Acquired</Label><Input id="asset-date-acquired" name="asset-date-acquired" value={form['asset-date-acquired'] || ''} onChange={handleFormChange} type="date" className="mt-1" required/></div>
-              <div><Label htmlFor="asset-cost">5. Cost of Acquisition (NGN)</Label><Input id="asset-cost" name="asset-cost" type="number" value={form['asset-cost'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., 5000000" required/></div>
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="asset-cost">5. Cost of Acquisition</Label>
+                  <Input id="asset-cost" name="asset-cost" type="number" value={form['asset-cost'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., 5000000" required/>
+                </div>
+                <div>
+                  <Label htmlFor="asset-currency">Currency</Label>
+                  <CurrencySelect 
+                    value={form['asset-currency'] || 'NGN'} 
+                    onChange={(value) => handleFormChange(value, 'asset-currency')} 
+                    className="mt-1" 
+                  />
+                </div>
+              </div>
               <div><Label htmlFor="asset-depreciation">6. Depreciation Per Annum (%)</Label><Input id="asset-depreciation" name="asset-depreciation" type="number" value={form['asset-depreciation'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., 15" /></div>
               <div className="md:col-span-2"><Label htmlFor="asset-purpose">7. Business Purpose</Label><Input id="asset-purpose" name="asset-purpose" value={form['asset-purpose'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., Customer transaction processing" required /></div>
               <div>
@@ -157,7 +178,20 @@ export function AddAssetModal({ isOpen, onOpenChange }: AddAssetModalProps) {
                 </Select>
               </div>
               <div><Label htmlFor="recurrent-exp-prev">9. Recurrent Expenditure (p.a. previous)</Label><Input id="recurrent-exp-prev" name="recurrent-exp-prev" value={form['recurrent-exp-prev'] || ''} onChange={handleFormChange} type="number" className="mt-1" placeholder="e.g., 250000" /></div>
-              <div><Label htmlFor="recurrent-exp-curr">10. Recurrent Expenditure (p.m. current)</Label><Input id="recurrent-exp-curr" name="recurrent-exp-curr" value={form['recurrent-exp-curr'] || ''} onChange={handleFormChange} type="number" className="mt-1" placeholder="e.g., 25000" /></div>
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="recurrent-exp-curr">10. Recurrent Expenditure (p.m. current)</Label>
+                  <Input id="recurrent-exp-curr" name="recurrent-exp-curr" value={form['recurrent-exp-curr'] || ''} onChange={handleFormChange} type="number" className="mt-1" placeholder="e.g., 25000" />
+                </div>
+                <div>
+                  <Label htmlFor="recurrent-currency">Currency</Label>
+                  <CurrencySelect 
+                    value={form['recurrent-currency'] || 'NGN'} 
+                    onChange={(value) => handleFormChange(value, 'recurrent-currency')} 
+                    className="mt-1" 
+                  />
+                </div>
+              </div>
               <div><Label htmlFor="asset-location">11. Location/s of Deployment (Text)</Label><Input id="asset-location" name="asset-location" value={form['asset-location'] || ''} onChange={handleFormChange} className="mt-1" placeholder="e.g., Head Office Data Center" /></div>
               <div className="md:col-span-2"><Label htmlFor="asset-technical-details">12. Technical Details</Label><Textarea id="asset-technical-details" name="asset-technical-details" value={form['asset-technical-details'] || ''} onChange={handleFormChange} className="mt-1" rows={2} placeholder="e.g., Server specs, OS, dependencies" required/></div>
               <div>

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/lib/currency';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -64,9 +65,7 @@ export default function AssetsPage() {
     fetchAssets();
   }, []);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(value);
-  }
+  // Using the formatCurrency function from our currency library
 
   const handleStatusChange = async (assetId: string, newStatus: AssetStatus) => {
     try {
@@ -135,7 +134,14 @@ export default function AssetsPage() {
                 <TableCell className="font-medium">{asset.name}</TableCell>
                 <TableCell>{asset.type}</TableCell>
                 <TableCell>{new Date(asset.acquired).toLocaleDateString()}</TableCell>
-                <TableCell>{formatCurrency(asset.cost)}</TableCell>
+                <TableCell>
+                  {formatCurrency(asset.cost, asset.currency || 'NGN')}
+                  {asset.currency !== 'NGN' && asset.costInNaira && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      ({formatCurrency(asset.costInNaira, 'NGN')})
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Badge variant={statusVariant[asset.status as AssetStatus] || 'outline'}>
                     {asset.status}

@@ -34,11 +34,17 @@ model Assets {
   summary                 String?
   acquired                DateTime
   cost                    Float
+  currency                String       @default("NGN")
+  exchange_rate           Float?       @map("exchange_rate")
+  cost_in_naira           Float?       @map("cost_in_naira")
   status                  String
   purpose                 String?
   technical_details       String?      @map("technical_details")
   sub_category            String?      @map("sub_category")
   recurrent_expenditure   Float?       @map("recurrent_expenditure")
+  recurrent_currency      String?      @default("NGN") @map("recurrent_currency")
+  recurrent_exchange_rate Float?       @map("recurrent_exchange_rate")
+  recurrent_in_naira      Float?       @map("recurrent_in_naira")
   ai_summary              String?      @map("ai_summary")
   image_url               String?      @map("image_url")
   created_at              DateTime     @default(now()) @map("created_at")
@@ -119,4 +125,28 @@ model AuditLogs {
   asset      Assets?   @relation(fields: [asset_id], references: [id])
 
   @@map("audit_logs")
+}
+
+model OrganizationProfile {
+  id         String    @id @default(uuid())
+  name       String
+  address    String?
+  logo_url   String?   @map("logo_url")
+  created_at DateTime  @default(now()) @map("created_at")
+  updated_at DateTime  @updatedAt @map("updated_at")
+  turnovers  Turnovers[]
+
+  @@map("organization_profile")
+}
+
+model Turnovers {
+  id         String    @id @default(uuid())
+  year       Int
+  amount     Float
+  org_id     String    @map("org_id")
+  created_at DateTime  @default(now()) @map("created_at")
+  updated_at DateTime  @updatedAt @map("updated_at")
+  organization OrganizationProfile @relation(fields: [org_id], references: [id])
+
+  @@map("turnovers")
 }

@@ -2,6 +2,7 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import { formatCurrency } from '@/lib/currency';
 import type { Asset, OrganizationProfile, Staff } from '@/lib/types';
 import { useEffect, useState } from 'react';
 
@@ -11,19 +12,27 @@ const accessLogs = [
   { user: "Super Admin", action: "created a new user profile for", detail: "'David Chen'" , detailColor: "text-green-400"},
 ];
 
-const MOCK_ORG_ID = 'mock-organization-id'; // Placeholder
-
 export default function DashboardPage() {
   const [data, setData] = useState<{ assets: Asset[], staff: Staff[], profile: Partial<OrganizationProfile> } | null>(null);
   
   useEffect(() => {
     async function getData() {
-        const orgId = MOCK_ORG_ID;
         try {
-          // Data fetching logic removed
-          setData({ assets: [], staff: [], profile: { turnovers: [] } });
+          // Fetch assets data
+          const assetsResponse = await fetch('/api/assets');
+          const assets = await assetsResponse.json();
+          
+          // Fetch staff data
+          const staffResponse = await fetch('/api/staff');
+          const staff = await staffResponse.json();
+          
+          // Fetch organization profile data
+          const profileResponse = await fetch('/api/organization');
+          const profile = await profileResponse.json();
+          
+          setData({ assets, staff, profile });
         } catch(e) {
-          console.warn("Could not fetch dashboard data. This is expected if Firestore is not set up.", e);
+          console.error("Error fetching dashboard data:", e);
           setData({ assets: [], staff: [], profile: { turnovers: [] } });
         }
     }
@@ -31,9 +40,7 @@ export default function DashboardPage() {
     getData();
   }, []);
   
-  const formatCurrency = (value: number, options: Intl.NumberFormatOptions = {}) => {
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0, ...options }).format(value);
-  }
+  // Using the formatCurrency function from our currency library
   
   if (!data) {
     return <div>Loading...</div>;
@@ -62,10 +69,10 @@ export default function DashboardPage() {
   const averageIctMaturity = staff.length > 0 ? (totalQualificationScore / staff.length) : 0;
 
   const kpiData = [
-    { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure, { notation: 'compact' }), change: "+5.2%" },
-    { title: "Capital Expenditure (YTD)", value: formatCurrency(capitalExpenditure, { notation: 'compact' }), change: "+12.1%" },
+    { title: "Recurrent Expenditure (YTD)", value: formatCurrency(recurrentExpenditure, 'NGN', { notation: 'compact' }), change: "+5.2%" },
+    { title: "Capital Expenditure (YTD)", value: formatCurrency(capitalExpenditure, 'NGN', { notation: 'compact' }), change: "+12.1%" },
     { title: "Number of Staff", value: totalStaff, change: "+2 this month" },
-    { title: "Monthly Salaries", value: formatCurrency(monthlySalaries, { notation: 'compact' }), change: "+3%" },
+    { title: "Monthly Salaries", value: formatCurrency(monthlySalaries, 'NGN', { notation: 'compact' }), change: "+3%" },
     { title: "Expenses/Turnover", value: `${expensesToTurnoverRatio.toFixed(1)}%`, change: "-0.5%", changeType: "down" },
     { title: "ICT Maturity Score", value: `${averageIctMaturity.toFixed(0)}/100`, change: "+3 pts" },
   ];
